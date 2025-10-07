@@ -19,6 +19,16 @@ You are an orchestrator for generating Tellescope SDK scripts that populate user
 
 Constellation uses specialized agents in `.claude/agents/` for different tasks:
 
+### Planning Agent (Architecture & Design)
+
+#### 🏗️ **architect**
+Analyzes customer requirements and designs comprehensive account configurations
+- **Use for**: Complex setups requiring multiple resource types, workflows with dependencies
+- **Outputs**: Detailed architecture document with resource inventory, dependency graph, implementation sequence, and integration points
+- **Key expertise**: Dependency mapping, resource relationships, implementation sequencing, ID passing between resources
+- **When to use**: **ALWAYS** for multi-resource setups (e.g., forms + templates + journeys) or when resources reference each other
+- **Collaborates with**: All builder agents - provides them with clear specifications and dependency information
+
 ### Builder Agents (Code Generation)
 
 #### 📝 **form-builder**
@@ -58,68 +68,107 @@ Reviews and validates scripts for correctness, best practices, and common issues
 
 ## Agent Collaboration Patterns
 
-### Pattern 1: Simple Form Creation
+### Pattern 1: Simple Single-Resource Creation
 ```
-User Request → form-builder → script-evaluator → Final Script
+User Request → builder agent (form/template/calendar) → script-evaluator → Final Script
 ```
+**Use when**: Creating a single resource type with no external dependencies
+**Example**: "Create a PHQ-9 form" or "Create a welcome email template"
 
-### Pattern 2: Journey with Email Templates
+### Pattern 2: Multi-Resource Setup with Dependencies (RECOMMENDED)
 ```
-User Request → automation-builder identifies need for templates
+User Request → architect analyzes requirements
             ↓
-            message-template-builder creates templates
+            architect creates architecture document (resources, dependencies, sequence)
             ↓
-            automation-builder references templates in Journey steps
+            builder agents execute in sequence (sharing IDs):
+            ├─ form-builder (creates forms) → outputs: formIds
+            ├─ message-template-builder (uses formIds in templates) → outputs: templateIds
+            └─ automation-builder (uses templateIds + formIds in journey) → outputs: journeyIds
             ↓
             script-evaluator reviews complete workflow
             ↓
-            Final Script
+            Final Script (with all ID references correct)
 ```
+**Use when**: Creating multiple resources that reference each other
+**Example**: "Set up patient onboarding with intake form, welcome email, and automation"
 
-### Pattern 3: Complete Account Setup
+### Pattern 3: Complex Campaign/Workflow
 ```
-User Request → Multiple builder agents in parallel:
-            ├─ form-builder (intake forms)
-            ├─ automation-builder (workflows)
-            └─ message-template-builder (email templates)
+User Request → architect creates detailed plan with dependency graph
             ↓
-            Combine outputs into composable scripts
+            Multiple builder agents work in coordinated sequence:
+            Step 1: form-builder creates all forms → formIds
+            Step 2: message-template-builder creates all templates (refs formIds) → templateIds
+            Step 3: calendar-builder creates booking system (refs templateIds) → calendarIds
+            Step 4: automation-builder creates journeys + triggers (refs all IDs)
             ↓
-            script-evaluator reviews each script
+            script-evaluator reviews each component
             ↓
-            Final Scripts (individual + composite)
+            Composite script combining all components
 ```
+**Use when**: Building complete workflows with 5+ resources and complex dependencies
+**Example**: "Set up wellness program with intake, assessment, conditional emails, and follow-ups"
 
-## Workflow with Quality Assurance
+## Recommended Workflow
 
-### When a user requests account configuration:
+### For Simple Single-Resource Requests:
 
-1. **Understand the requirements**
-   - What resources need to be created? (Forms, Journeys, Templates, etc.)
-   - Are there dependencies between resources?
+1. **Delegate directly to builder agent**
+   - Use form-builder, message-template-builder, calendar-builder, or automation-builder
+   - Builder generates code for single resource type
 
-2. **Delegate to appropriate builder agents**
-   - Use the `Task` tool to invoke specialized agents
-   - For complex workflows, coordinate multiple agents
-   - Allow agents to collaborate (e.g., automation-builder + message-template-builder)
+2. **Review with script-evaluator**
+   - Always run script-evaluator after builder agent
+   - Address any critical issues
 
-3. **Review generated code with script-evaluator**
-   - **IMPORTANT**: Always run script-evaluator after builder agents
-   - Provide the generated code for review
-   - Address any critical issues or warnings identified
+3. **Create standalone script**
+   - Wrap code in composable script structure
+   - Save with descriptive filename
 
-4. **Create complete standalone scripts**
-   - Start with the standard script structure (dotenv, Session, run function)
-   - Insert agent-generated code (after review/fixes)
-   - Add proper error handling and logging
-   - Include documentation comments
+### For Multi-Resource Requests (RECOMMENDED WORKFLOW):
 
-5. **Save generated scripts for user's production use**
-   - Generated scripts should be saved to a user-specified location or provided for manual saving
-   - Use descriptive kebab-case filenames (e.g., `create-phq9-form.ts`, `setup-initial-users.ts`)
+1. **Invoke architect agent first**
+   - Architect analyzes requirements
+   - Architect creates architecture document with:
+     - Resource inventory
+     - Dependency graph
+     - Implementation sequence
+     - Integration points (ID passing)
+     - Builder agent instructions
 
-6. **Provide usage instructions**
-   - Show how to build and run the script
+2. **Review architecture with user (if complex)**
+   - Present the plan for validation
+   - Confirm all requirements are captured
+   - Adjust if needed
+
+3. **Execute builder agents in sequence**
+   - Follow architect's implementation sequence
+   - Pass IDs between agents as specified in integration points
+   - Example sequence:
+     a. form-builder creates forms → capture formIds
+     b. message-template-builder creates templates using formIds → capture templateIds
+     c. automation-builder creates journey using templateIds + formIds
+
+4. **Review each component with script-evaluator**
+   - Run evaluator after each builder agent completes
+   - Fix critical issues before proceeding
+
+5. **Combine into final script**
+   - Merge all builder outputs into single script
+   - Ensure all ID references are correct
+   - Add error handling and logging
+   - Include architecture documentation in comments
+
+6. **Final review**
+   - Run script-evaluator on complete script
+   - Verify against architect's validation checklist
+   - Test that all integration points work
+
+7. **Save and provide usage instructions**
+   - Save with descriptive filename
+   - Provide build/run commands
+   - Include architecture summary for user reference
 
 ## Script Structure
 
@@ -240,8 +289,9 @@ setupAccount()
 - **Environment example**: `.env.example` (for documentation)
 
 ### Agents
-- **Agent definitions**: `.claude/agents/` (specialized code generators)
+- **Agent definitions**: `.claude/agents/` (specialized agents for planning, code generation, and quality assurance)
 - **Available agents**:
+  - `architect.md` - Analyzes requirements and designs account configurations with dependency mapping
   - `form-builder.md` - Expert at creating Tellescope Forms and FormFields
   - `automation-builder.md` - Expert at creating Journeys and automation workflows
   - `message-template-builder.md` - Expert at creating mobile-optimized MessageTemplates
@@ -296,37 +346,45 @@ All scripts require these environment variables (loaded from `.env`):
 
 ## Using Agents in Practice
 
-### Invoking Builder Agents
+### Invoking the Architect Agent (For Multi-Resource Setups)
 
-Use the `Task` tool to delegate code generation to specialized agents:
+**ALWAYS** start with the architect for requests involving multiple resource types:
 
 ```typescript
-// Example: Form creation
+// Example: Complex onboarding workflow
 Task({
   subagent_type: 'general-purpose',
-  description: 'Build PHQ-9 form',
-  prompt: 'Using the form-builder agent in .claude/agents/form-builder.md, generate TypeScript code to create a PHQ-9 depression screening form with all 9 questions plus severity scoring...'
+  description: 'Design patient onboarding architecture',
+  prompt: 'Using the architect agent in .claude/agents/architect.md, analyze this customer request and create a detailed architecture document:\n\n"Set up patient onboarding: when someone submits our intake form, send a welcome email with the form link, wait 2 days and send an assessment form, then if score > 10 send high-risk email and create ticket, otherwise send normal follow-up."\n\nProvide: resource inventory, dependency graph, implementation sequence, integration points, and builder agent instructions.'
+})
+```
+
+The architect will output a structured plan that you can then use to coordinate builder agents.
+
+### Invoking Builder Agents
+
+Use the `Task` tool to delegate code generation to specialized agents. **For multi-resource setups, pass the architect's instructions to each builder:**
+
+```typescript
+// Example: Form creation (using architect's specifications)
+Task({
+  subagent_type: 'general-purpose',
+  description: 'Build intake and assessment forms',
+  prompt: 'Using the form-builder agent in .claude/agents/form-builder.md, generate TypeScript code based on these architect specifications:\n\nForms to create:\n1. Intake Form (name, email, phone, DOB)\n2. Health Assessment Form (9 scored questions, 0-3 points each)\n\nExport variables: intakeFormId, assessmentFormId\n\nThese IDs will be used in message templates and journey actions.'
 })
 
-// Example: Journey creation
+// Example: Templates referencing forms (using IDs from previous step)
+Task({
+  subagent_type: 'general-purpose',
+  description: 'Build email templates with form links',
+  prompt: 'Using the message-template-builder agent in .claude/agents/message-template-builder.md, generate TypeScript code based on architect specifications:\n\nTemplates to create:\n1. Welcome Email - include placeholder {{forms.{intakeFormId}.link}}\n2. Assessment Reminder - include placeholder {{forms.{assessmentFormId}.link}}\n3. High Risk Email - no form links\n4. Normal Follow-Up - no form links\n\nExport variables: welcomeTemplateId, reminderTemplateId, highRiskTemplateId, normalTemplateId\n\nNote: Form IDs will be provided from previous step.'
+})
+
+// Example: Journey using templates and forms (using IDs from previous steps)
 Task({
   subagent_type: 'general-purpose',
   description: 'Build onboarding journey',
-  prompt: 'Using the automation-builder agent in .claude/agents/automation-builder.md, generate TypeScript code to create a patient onboarding journey that sends a welcome email, then an intake form after 1 hour, then tags the patient when the form is completed...'
-})
-
-// Example: Email template creation
-Task({
-  subagent_type: 'general-purpose',
-  description: 'Build appointment reminder template',
-  prompt: 'Using the message-template-builder agent in .claude/agents/message-template-builder.md, generate TypeScript code to create a mobile-optimized appointment reminder email template with calendar event variables...'
-})
-
-// Example: Calendar configuration
-Task({
-  subagent_type: 'general-purpose',
-  description: 'Build appointment booking system',
-  prompt: 'Using the calendar-builder agent in .claude/agents/calendar-builder.md, generate TypeScript code to create appointment templates for Initial Consultation (60 min) and Follow-Up (30 min), a Telehealth location, and a booking page that includes both templates...'
+  prompt: 'Using the automation-builder agent in .claude/agents/automation-builder.md, generate TypeScript code based on architect specifications:\n\nJourney steps:\n1. Send welcome email (onJourneyStart, use welcomeTemplateId)\n2. Wait 2 days, send assessment reminder (use reminderTemplateId)\n3. Send assessment form (use assessmentFormId)\n4a. If score >= 10: send high risk email (use highRiskTemplateId) + create ticket\n4b. If score < 10: send normal email (use normalTemplateId)\n\nExport variables: onboardingJourneyId\n\nNote: Template IDs and form IDs will be provided from previous steps.'
 })
 ```
 
@@ -369,11 +427,13 @@ Task({
 8. **Document clearly** - Add comments explaining what the script does and its parameters
 9. **Return useful info** - Log IDs of created resources for reference
 
-## Example Interaction
+## Example Interactions
+
+### Example 1: Simple Single-Resource Request
 
 **User**: "Create a PHQ-9 depression screening form"
 
-**You**:
+**You** (Pattern 1: Direct to builder):
 1. ✅ Invoke **form-builder** agent with PHQ-9 requirements
 2. ✅ Receive form creation code from agent
 3. ✅ Invoke **script-evaluator** agent to review the generated code
@@ -382,31 +442,51 @@ Task({
 6. ✅ Provide script to user with suggested filename `create-phq9-form.ts`
 7. ✅ Respond with confirmation and usage instructions
 
-**User**: "Create a patient onboarding journey with welcome emails"
+### Example 2: Multi-Resource Request with Dependencies
 
-**You**:
-1. ✅ Invoke **automation-builder** agent for journey requirements
-2. ✅ automation-builder identifies need for email templates
-3. ✅ Invoke **message-template-builder** to create welcome email template
-4. ✅ automation-builder creates journey referencing the template
-5. ✅ Invoke **script-evaluator** to review the complete workflow code
-6. ✅ Apply fixes for any issues identified
-7. ✅ Wrap code in standalone script structure
-8. ✅ Provide script to user with suggested filename `create-onboarding-journey.ts`
-9. ✅ Respond with confirmation and usage instructions
+**User**: "Set up patient onboarding: when someone submits our intake form, send a welcome email with next steps, then after 2 days send them a health assessment form"
 
-**User**: "Set up appointment booking for my practice - I need Initial Consultation and Follow-Up appointment types, and I offer both in-person and telehealth"
+**You** (Pattern 2: Architect-led):
+1. ✅ Invoke **architect** agent to analyze requirements and create architecture document
+   - Architect identifies: Intake Form, Assessment Form, Welcome Email Template, Reminder Email Template, Onboarding Journey, Form Submit Trigger
+   - Architect maps dependencies: Forms → Templates (form links) → Journey (template refs) → Trigger
+   - Architect defines sequence: Forms first, then Templates, then Journey, then Trigger
 
-**You**:
-1. ✅ Invoke **calendar-builder** agent with appointment requirements
-2. ✅ calendar-builder generates code for 2 locations (office + telehealth)
-3. ✅ calendar-builder generates code for 2 appointment templates (consultation + follow-up)
-4. ✅ calendar-builder generates code for booking page linking templates and locations
-5. ✅ Invoke **script-evaluator** to review the calendar configuration code
-6. ✅ Apply fixes for any issues identified
-7. ✅ Wrap code in standalone script structure
-8. ✅ Provide script to user with suggested filename `setup-appointment-booking.ts`
-9. ✅ Respond with confirmation, usage instructions, and booking page URL
+2. ✅ Present architecture summary to user for validation
+   - "I've designed a system with 2 forms, 2 email templates, 1 journey, and 1 trigger. The forms will be linked in the emails, and the journey will send both emails with proper delays."
+
+3. ✅ Execute builder agents in sequence (following architect's plan):
+   - **form-builder**: Creates Intake Form and Assessment Form → outputs: intakeFormId, assessmentFormId
+   - **message-template-builder**: Creates Welcome and Reminder templates (using form IDs) → outputs: welcomeTemplateId, reminderTemplateId
+   - **automation-builder**: Creates Journey (using template IDs and form IDs) and Trigger → outputs: journeyId, triggerId
+
+4. ✅ Invoke **script-evaluator** to review complete integrated script
+5. ✅ Apply fixes based on evaluator feedback
+6. ✅ Wrap in standalone script structure with all components integrated
+7. ✅ Provide script with filename `setup-patient-onboarding.ts`
+8. ✅ Include architecture summary in script comments for future reference
+
+### Example 3: Complex Multi-Resource Request
+
+**User**: "Set up appointment booking for my practice - I need Initial Consultation and Follow-Up appointment types, send reminder emails 24 hours before appointments, and I offer both in-person and telehealth"
+
+**You** (Pattern 2: Architect-led):
+1. ✅ Invoke **architect** agent to analyze requirements
+   - Architect identifies: 2 Locations, 1 Reminder Template, 2 Calendar Templates, 1 Booking Page
+   - Architect maps dependencies: Locations + Reminder Template → Calendar Templates → Booking Page
+   - Architect defines integration points: Reminder template ID goes into calendar template reminders array, location IDs and template IDs go into booking page
+
+2. ✅ Execute builder agents in sequence:
+   - **calendar-builder**: Creates Office and Telehealth locations → outputs: officeId, telehealthId
+   - **message-template-builder**: Creates Reminder Email (with calendar variables) → outputs: reminderTemplateId
+   - **calendar-builder**: Creates Consultation and Follow-Up templates (using reminderTemplateId in reminders) → outputs: consultTemplateId, followUpTemplateId
+   - **calendar-builder**: Creates Booking Page (using location IDs and template IDs) → outputs: bookingPageId
+
+3. ✅ Invoke **script-evaluator** to review calendar configuration
+4. ✅ Apply fixes
+5. ✅ Wrap in standalone script structure
+6. ✅ Provide script `setup-appointment-booking.ts` with booking page URL
+7. ✅ Include validation checklist from architect
 
 ## Script Composition Example
 
@@ -426,21 +506,31 @@ This allows users to:
 
 ## Key Reminders
 
+### Planning & Architecture
+- **DO**: Use **architect** agent for ANY multi-resource setup (forms + templates, journeys + forms, calendar + templates, etc.)
+- **DO**: Let architect define implementation sequence and ID passing between resources
+- **DO**: Present architecture summary to user for complex requests before coding
+- **DO**: Follow architect's integration points exactly when builder agents reference IDs
+
 ### Code Generation & Quality
 - **DO**: Use specialized builder agents for code generation (form-builder, automation-builder, message-template-builder, calendar-builder)
+- **DO**: Pass architect's specifications to builder agents so they know what IDs to export and reference
 - **DO**: **ALWAYS** run script-evaluator after builder agents generate code
 - **DO**: Fix critical issues identified by script-evaluator before saving
-- **DO**: Allow agents to collaborate (automation-builder + message-template-builder)
+- **DO**: Verify against architect's validation checklist after script completion
 
 ### Script Structure
 - **DO**: Export a main function that accepts optional Session parameter
 - **DO**: Support both standalone and composed execution with `require.main === module`
 - **DO**: Create composite scripts when multiple features are requested together
 - **DO**: Refer to `examples/` for script structure templates and patterns
+- **DO**: Include architect's summary in script comments for future reference
 
 ### Common Pitfalls
+- **DON'T**: Skip architect for multi-resource setups - IDs will be wrong
 - **DON'T**: Skip the script-evaluator review step
 - **DON'T**: Create scripts that can't run independently
 - **DON'T**: Initialize sessions in exported functions (accept as parameter instead)
 - **DON'T**: Forget environment variable validation in standalone execution block
 - **DON'T**: Ignore critical issues from script-evaluator
+- **DON'T**: Hardcode IDs - use variables passed between builder agents
