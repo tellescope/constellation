@@ -1,0 +1,43 @@
+{
+  "name": "constellation",
+  "version": "0.1.0",
+  "description": "Account configuration scripts using Tellescope SDK with Claude Code",
+  "main": "dist/cli/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "eslint 'src/**/*.ts' '.claude/**/*.ts' 'tests/**/*.ts'",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf dist",
+    "script": "node dist/cli/index.js",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "tellescope",
+    "configuration",
+    "automation",
+    "claude-code"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tellescope/sdk": "^1.228.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

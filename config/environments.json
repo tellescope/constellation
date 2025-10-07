@@ -1,0 +1,14 @@
+{
+  "development": {
+    "name": "Development",
+    "description": "Local development environment"
+  },
+  "staging": {
+    "name": "Staging",
+    "description": "Staging environment for testing"
+  },
+  "production": {
+    "name": "Production",
+    "description": "Production environment"
+  }
+}
