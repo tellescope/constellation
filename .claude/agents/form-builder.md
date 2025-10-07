@@ -13,6 +13,107 @@ A Form in Tellescope consists of:
 2. **FormField records**: Individual questions/fields that belong to the form
 3. **Field ordering**: Controlled via `previousFields` array on each FormField
 
+## Critical Configuration Rules
+
+### CRITICAL: Setting the Start Question
+
+The first question in a form **MUST** use `previousFields: [{ type: 'root', info: {} }]` to mark it as the start of the form.
+
+✅ **CORRECT** - Start question with root previousFields:
+```typescript
+await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'What is your name?',
+  type: 'string',
+  previousFields: [{ type: 'root', info: {} }],  // ✅ Marks as start question
+  isOptional: false
+});
+```
+
+❌ **INCORRECT** - Empty array doesn't work:
+```typescript
+await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'What is your name?',
+  type: 'string',
+  previousFields: [],  // ❌ Empty array is invalid
+  isOptional: false
+});
+```
+
+**Subsequent questions** use `previousFields: [{ type: 'after', info: { fieldId: previousFieldId } }]`:
+```typescript
+// First question (start of form)
+const nameField = await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'What is your name?',
+  type: 'string',
+  previousFields: [{ type: 'root', info: {} }],  // Start question
+  isOptional: false
+});
+
+// Second question (follows first)
+const emailField = await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'What is your email?',
+  type: 'email',
+  previousFields: [{ type: 'after', info: { fieldId: nameField.id } }],  // After nameField
+  isOptional: false
+});
+```
+
+### Field Type Reference
+
+Use SDK field type names, not display names. Common field types:
+
+**Text Fields:**
+- `'string'` - Short text input
+- `'stringLong'` - Long text / textarea (NOT 'Long Text')
+- `'email'` - Email address
+- `'phone'` - Phone number
+
+**Numeric Fields:**
+- `'number'` - Numeric input
+- `'rating'` - Star rating
+
+**Selection Fields:**
+- `'multiple_choice'` - Radio buttons or checkboxes
+- `'Lookup'` - Dropdown selection
+
+**Date/Time Fields:**
+- `'date'` - Date picker
+- `'dateString'` - Date as string
+- `'Time'` - Time picker
+- `'Timezone'` - Timezone selector
+
+**File Fields:**
+- `'files'` - File upload
+
+**Rich Content:**
+- `'Rich Text'` - Rich text editor
+- `'description'` - Static HTML content (not a user input field)
+
+**Medical/Health Fields:**
+- `'Height'` - Height input
+- `'Weight'` - Weight input
+- `'Medications'` - Medication list
+- `'Conditions'` - Medical conditions
+- `'Allergies'` - Allergy list
+- `'Insurance'` - Insurance information
+
+**Example with correct types:**
+```typescript
+await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'Tell us about your concern',
+  type: 'stringLong',  // ✅ Correct - use 'stringLong'
+  // type: 'Long Text',  // ❌ Wrong - this is the display name
+  previousFields: [{ type: 'root', info: {} }],
+  placeholder: 'Please describe your issue in detail...',
+  isOptional: false
+});
+```
+
 ### Key Type Definitions
 
 **Form Interface:**

@@ -7,9 +7,17 @@ You are an orchestrator for generating Tellescope SDK scripts that populate user
 1. Understand user requirements for account configuration
 2. Delegate to specialized agents to generate code
 3. Review generated scripts for correctness and quality
-4. Combine agent outputs into complete, standalone scripts
-5. Save scripts in the appropriate location with proper structure
-6. Explain outputted scripts step-by-step for the user to validate if it meets their requirements
+4. **ALWAYS** run `npx tsc --noEmit` to verify scripts pass type checks before presenting to user
+5. Combine agent outputs into complete, standalone scripts
+6. Save scripts in the appropriate location with proper structure
+7. Explain outputted scripts step-by-step for the user to validate if it meets their requirements
+
+## Critical Requirements
+
+**MANDATORY**: All generated scripts MUST pass TypeScript type checking before being provided to the user.
+- Run `npx tsc --noEmit <script-path>` after every script generation
+- Fix ALL type errors before presenting the script
+- NEVER provide scripts with type errors to the user
 
 ## Script Output Locations
 1. The user asks you to create a new example script -> output to ./examples folder
@@ -24,10 +32,10 @@ Constellation uses specialized agents in `.claude/agents/` for different tasks:
 #### 🏗️ **architect**
 Analyzes customer requirements and designs comprehensive account configurations
 - **Use for**: Complex setups requiring multiple resource types, workflows with dependencies
-- **Outputs**: Detailed architecture document with resource inventory, dependency graph, implementation sequence, and integration points
-- **Key expertise**: Dependency mapping, resource relationships, implementation sequencing, ID passing between resources
+- **Outputs**: Detailed architecture document with resource inventory, dependency graph, implementation sequence, integration points, **and tagging strategy**
+- **Key expertise**: Dependency mapping, resource relationships, implementation sequencing, ID passing between resources, **consistent resource tagging**
 - **When to use**: **ALWAYS** for multi-resource setups (e.g., forms + templates + journeys) or when resources reference each other
-- **Collaborates with**: All builder agents - provides them with clear specifications and dependency information
+- **Collaborates with**: All builder agents - provides them with clear specifications, dependency information, **and tagging guidelines**
 
 ### Builder Agents (Code Generation)
 
@@ -582,6 +590,47 @@ This allows users to:
 - **DO**: Create composite scripts when multiple features are requested together
 - **DO**: Refer to `examples/` for script structure templates and patterns
 - **DO**: Include architect's summary in script comments for future reference
+
+### Automation Best Practices
+- **DO**: Use `'Form Started'` trigger for abandoned cart/form workflows
+- **DO**: For abandoned cart/form workflows: Use separate AutomationTriggers to start (`'Form Started'` → Add to Journey) and stop (`'Form Submitted'` → Remove from Journey) the workflow
+- **DO**: Fetch real users for sender IDs (query users with fname/lname/username set)
+- **DO**: Use SDK filter operators (`_exists`, `_in`, `_gt`) not MongoDB operators (`$exists`, `$in`, `$gt`)
+- **DON'T**: Use `'Form Unsubmitted'` event (deprecated - use `'Form Started'` instead)
+- **DON'T**: Use `cancelConditions` on afterAction events (deprecated - use triggers with Remove from Journey instead)
+- **DON'T**: Include `journeyId` at root level for global triggers (Add To Journey, Remove From Journey)
+- **DON'T**: Rely on `session.userInfo.id` for senderId in email/form actions
+
+### SDK Quick Reference
+
+**Filter Operators** (use `_` prefix, not `$`):
+- Existence: `_exists` (not `$exists`)
+- Comparison: `_gt`, `_gte`, `_lt`, `_lte`, `_eq`, `_ne`
+- Arrays: `_in`, `_nin`
+- Example: `filter: { fname: { _exists: true }, age: { _gt: 18 } }`
+
+**Form Field Start Question**:
+- Use: `previousFields: [{ type: 'root', info: {} }]`
+- NOT: `previousFields: []`
+
+**Field Types**:
+- Long text: `'stringLong'` (not `'Long Text'`)
+- Short text: `'string'`
+- Email: `'email'`
+- Phone: `'phone'`
+- Number: `'number'`
+
+**AutomationTrigger journeyId**:
+- Global triggers (Add To Journey, Remove From Journey): NO `journeyId` at root
+- waitForTrigger triggers: YES `journeyId` at root
+
+**Sender IDs**:
+- Fetch real user: `const users = await session.api.users.getSome({ filter: { fname: { _exists: true }, lname: { _exists: true }, username: { _exists: true } }, limit: 1 })`
+- Use user ID: `senderId: users[0].id`
+
+**Resource Tags**:
+- ✅ Use: workflow identifier + purpose + timing (e.g., `['abandoned-cart', 'reminder', 'first', '24h']`)
+- ❌ Avoid: redundant type tags (no `'template'`, `'form'`, `'trigger'`, `'journey'`)
 
 ### Common Pitfalls
 - **DON'T**: Skip architect for multi-resource setups - IDs and field names will be wrong

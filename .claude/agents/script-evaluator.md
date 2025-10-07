@@ -312,9 +312,131 @@ When reviewing a script, provide feedback in this structure:
 [Prioritized list of what should be fixed]
 ```
 
+## Critical Validation Checklist
+
+Before providing your assessment, check these critical configuration issues:
+
+### AutomationTrigger Configuration
+- [ ] **Global triggers** (Add To Journey, Remove From Journey) do NOT have `journeyId` at root level
+  - ❌ `journeyId: 'journey-id'` at trigger root = WRONG
+  - ✅ `journeyId` only in `action.info` = CORRECT
+- [ ] **waitForTrigger triggers** (if any) DO have `journeyId` at root level
+- [ ] Trigger event types match SDK types (e.g., 'Form Started' not 'Form Viewed')
+- [ ] Event info structures are correct (e.g., `formIds: [...]` array not single `formId`)
+
+### Form Field Configuration
+- [ ] Start question uses `previousFields: [{ type: 'root', info: {} }]`
+- [ ] Start question is NOT using `previousFields: []` (empty array)
+- [ ] Field types use SDK values (e.g., `'stringLong'` not `'Long Text'`)
+- [ ] All field type names are valid SDK types
+
+### Sender IDs for Communication Actions
+- [ ] Email/form actions use fetched user IDs, not `session.userInfo.id`
+- [ ] Script fetches a real user with required fields (fname, lname, username)
+- [ ] Proper error handling if no valid users found
+
+### Filter Syntax
+- [ ] Filters use SDK operators (`_exists`, `_in`, `_gt`) not MongoDB operators (`$exists`, `$in`, `$gt`)
+- [ ] All filter operators are prefixed with `_` not `$`
+
+### Resource Tags
+- [ ] No tags duplicate resource type (no `'template'`, `'form'`, `'trigger'`, `'journey'` tags)
+- [ ] All related resources share a workflow identifier tag
+- [ ] Tags provide meaningful organizational information (purpose, timing, stage)
+- [ ] No redundant channel tags (e.g., `'email'` on MessageTemplate when `forChannels` already specifies this)
+
+### Script Structure
+- [ ] Exported function accepts optional `session?: Session` parameter
+- [ ] Uses `require.main === module` for standalone execution detection
+- [ ] Environment variables validated before standalone execution
+- [ ] Proper composable pattern (can be imported or run standalone)
+
 ## Common Anti-Patterns to Flag
 
-### 1. Hard-coded Values
+### 1. Incorrect Trigger Configuration (CRITICAL)
+```typescript
+// ❌ Global trigger with journeyId at root
+await session.api.automation_triggers.createOne({
+  title: 'Form Started',
+  event: { type: 'Form Started', info: { formIds: ['form-id'] } },
+  action: { type: 'Add To Journey', info: { journeyId: 'journey-id' } },
+  journeyId: 'journey-id'  // ❌ WRONG for global triggers
+});
+
+// ✅ Global trigger without journeyId at root
+await session.api.automation_triggers.createOne({
+  title: 'Form Started',
+  event: { type: 'Form Started', info: { formIds: ['form-id'] } },
+  action: { type: 'Add To Journey', info: { journeyId: 'journey-id' } }
+  // ✅ No journeyId at root
+});
+```
+
+### 2. Incorrect Form Field Start Question
+```typescript
+// ❌ Empty array doesn't work
+const firstField = await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'First question',
+  type: 'string',
+  previousFields: []  // ❌ WRONG
+});
+
+// ✅ Use root type
+const firstField = await session.api.form_fields.createOne({
+  formId: form.id,
+  title: 'First question',
+  type: 'string',
+  previousFields: [{ type: 'root', info: {} }]  // ✅ CORRECT
+});
+```
+
+### 3. Invalid Field Types
+```typescript
+// ❌ Display name instead of SDK type
+type: 'Long Text'  // ❌ WRONG
+
+// ✅ SDK type name
+type: 'stringLong'  // ✅ CORRECT
+```
+
+### 4. Wrong Filter Operators
+```typescript
+// ❌ MongoDB operators
+filter: {
+  fname: { $exists: true },  // ❌ WRONG
+  age: { $gt: 18 }           // ❌ WRONG
+}
+
+// ✅ SDK operators
+filter: {
+  fname: { _exists: true },  // ✅ CORRECT
+  age: { _gt: 18 }           // ✅ CORRECT
+}
+```
+
+### 5. Redundant Resource Tags
+```typescript
+// ❌ Tags duplicate resource type
+await session.api.templates.createOne({
+  tags: ['template', 'email', 'reminder']  // ❌ 'template' and 'email' are redundant
+});
+
+await session.api.forms.createOne({
+  tags: ['form', 'intake']  // ❌ 'form' is redundant
+});
+
+// ✅ Meaningful tags only
+await session.api.templates.createOne({
+  tags: ['abandoned-cart', 'reminder', 'first', '24h']  // ✅ All meaningful
+});
+
+await session.api.forms.createOne({
+  tags: ['abandoned-cart', 'intake']  // ✅ No redundant 'form' tag
+});
+```
+
+### 6. Hard-coded Values
 ```typescript
 // ❌ Hard-coded IDs
 formId: '12345'

@@ -64,6 +64,143 @@ The Tellescope automation system consists of three main components:
 AutomationTrigger fires → Adds enduser to Journey → AutomationSteps execute sequentially/conditionally
 ```
 
+## Critical Configuration Rules
+
+### CRITICAL: Global Triggers vs waitForTrigger Triggers
+
+**Understanding journeyId Placement in Triggers**
+
+There are two types of triggers in Tellescope, and they have **different requirements** for the `journeyId` field:
+
+#### 1. Global Triggers (Add To Journey, Remove From Journey)
+- **DO NOT** include `journeyId` at the root level of the trigger
+- **ONLY** include `journeyId` within `action.info`
+- These triggers operate independently across the entire platform and reference the journey through their action
+
+❌ **INCORRECT** - Global trigger with journeyId at root:
+```typescript
+await session.api.automation_triggers.createOne({
+  title: 'Form Started - Add to Journey',
+  status: 'Active',
+  event: { type: 'Form Started', info: { formIds: ['form-id'] } },
+  action: { type: 'Add To Journey', info: { journeyId: 'journey-id', doNotRestart: true } },
+  journeyId: 'journey-id',  // ❌ DO NOT include this for global triggers
+  oncePerEnduser: false
+});
+```
+
+✅ **CORRECT** - Global trigger without journeyId at root:
+```typescript
+await session.api.automation_triggers.createOne({
+  title: 'Form Started - Add to Journey',
+  status: 'Active',
+  event: { type: 'Form Started', info: { formIds: ['form-id'] } },
+  action: { type: 'Add To Journey', info: { journeyId: 'journey-id', doNotRestart: true } },
+  oncePerEnduser: false  // ✅ No journeyId at root level
+});
+```
+
+#### 2. waitForTrigger Triggers (used within Journey steps)
+- **MUST** include `journeyId` at the root level
+- These are bound to a specific journey and used with `waitForTrigger` events in AutomationSteps
+
+✅ **CORRECT** - waitForTrigger trigger with journeyId:
+```typescript
+await session.api.automation_triggers.createOne({
+  title: 'High Risk Assessment Submitted',
+  status: 'Active',
+  event: { type: 'Form Submitted', info: { formId: 'assessment-form-id' } },
+  action: { type: 'Custom Action', info: { customAction: 'flag-high-risk' } },
+  journeyId: 'care-journey-id',  // ✅ Required for waitForTrigger triggers
+  enduserConditions: { /* score conditions */ }
+});
+```
+
+**Quick Reference:**
+- **Global triggers** (Add To Journey, Remove From Journey): No `journeyId` at root
+- **waitForTrigger triggers** (used in journey steps): Include `journeyId` at root
+
+### CRITICAL: Obtaining Valid Sender IDs
+
+**Always fetch a real user to use as `senderId` for email and form actions.**
+
+The `session.userInfo.id` may not always be appropriate or valid for sending messages. Instead, query for a user with the required fields:
+
+✅ **RECOMMENDED** - Fetch a real user:
+```typescript
+// At the beginning of your script, fetch a user to use as sender
+const users = await session.api.users.getSome({
+  filter: {
+    fname: { _exists: true },
+    lname: { _exists: true },
+    username: { _exists: true }
+  },
+  limit: 1
+});
+
+if (users.length === 0) {
+  throw new Error('No users found with fname, lname, and username set. Please create a user first.');
+}
+
+const senderId = users[0].id;
+
+// Use in email actions
+const step = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{ type: 'onJourneyStart', info: {} }],
+  action: { type: 'sendEmail', info: { senderId: senderId, templateId: templateId } }
+});
+
+// Use in form actions
+const formStep = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{ type: 'afterAction', info: { automationStepId: prevStep.id, delayInMS: 0 } }],
+  action: { type: 'sendForm', info: { formId: formId, senderId: senderId, channel: 'Email' } }
+});
+```
+
+⚠️ **AVOID** - Relying on session.userInfo.id:
+```typescript
+// Don't assume session.userInfo.id will work for all message sending
+action: { type: 'sendEmail', info: { senderId: session.userInfo.id, templateId: templateId } }
+```
+
+### SDK Filter Syntax
+
+When using filters in `getSome()` or `getOne()` queries, use the SDK's filter operators, not MongoDB operators:
+
+✅ **CORRECT** - SDK syntax:
+```typescript
+const users = await session.api.users.getSome({
+  filter: {
+    fname: { _exists: true },           // ✅ SDK operator
+    status: { _in: ['Active', 'Pending'] },  // ✅ SDK operator
+    age: { _gt: 18 },                   // ✅ SDK operator
+    email: { _eq: 'user@example.com' }  // ✅ SDK operator
+  },
+  limit: 10
+});
+```
+
+❌ **INCORRECT** - MongoDB syntax (won't work):
+```typescript
+const users = await session.api.users.getSome({
+  filter: {
+    fname: { $exists: true },           // ❌ Use _exists
+    status: { $in: ['Active', 'Pending'] },  // ❌ Use _in
+    age: { $gt: 18 },                   // ❌ Use _gt
+    email: { $eq: 'user@example.com' }  // ❌ Use _eq
+  },
+  limit: 10
+});
+```
+
+**Common SDK Filter Operators:**
+- **Existence**: `_exists` (not `$exists`)
+- **Comparison**: `_gt`, `_gte`, `_lt`, `_lte`, `_eq`, `_ne`
+- **Array matching**: `_in`, `_nin`
+- **Text search**: `_regex`
+
 ## Type Definitions
 
 ### Journey Interface
@@ -169,8 +306,41 @@ type AutomationEventType =
     officeHoursOnly?: boolean, // Only run during office hours
     useEnduserTimezone?: boolean,
     skipIfDelayPassed?: boolean
+    // cancelConditions - DEPRECATED: Use AutomationTriggers with "Remove From Journey" instead
   }
 }
+```
+
+**IMPORTANT**: Do **NOT** use `cancelConditions` on afterAction events. This feature is deprecated.
+
+For **abandoned cart/form workflows**, use separate AutomationTriggers to enter and exit the journey:
+
+**Example (CORRECT approach for abandoned cart):**
+```typescript
+// Journey steps (send reminders if form not completed)
+const step1 = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{ type: 'afterAction', info: { automationStepId: prevStep.id, delayInMS: 86400000, delay: 1, unit: 'Days' } }],
+  action: { type: 'sendEmail', info: { templateId: '...' } }
+});
+
+// Trigger 1: Add to journey when form started
+const startTrigger = await session.api.automation_triggers.createOne({
+  title: 'Form started - add to abandoned cart journey',
+  status: 'Active',
+  event: { type: 'Form Started', info: { formIds: ['form-id'] } },
+  action: { type: 'Add To Journey', info: { journeyId: journey.id, doNotRestart: true } },
+  journeyId: journey.id
+});
+
+// Trigger 2: Remove from journey when form submitted (early exit)
+const exitTrigger = await session.api.automation_triggers.createOne({
+  title: 'Form submitted - exit abandoned cart journey',
+  status: 'Active',
+  event: { type: 'Form Submitted', info: { formId: 'form-id' } },
+  action: { type: 'Remove From Journey', info: { journeyId: journey.id } },
+  journeyId: journey.id
+});
 ```
 
 **3. afterAction with Day-of-Month Scheduling**
@@ -362,8 +532,9 @@ type AutomationActionType =
 ### Common Trigger Event Types
 ```typescript
 type AutomationTriggerEventType =
-  | 'Form Submitted'
-  | 'Form Unsubmitted'
+  | 'Form Submitted'      // When form is submitted
+  | 'Form Started'        // When user begins filling out form (PREFERRED for abandoned cart workflows)
+  | 'Form Unsubmitted'    // DO NOT USE - deprecated, use 'Form Started' instead
   | 'Purchase Made'
   | 'Appointment Completed'
   | 'Appointment Cancelled'
@@ -381,6 +552,8 @@ type AutomationTriggerEventType =
   // And 20+ more...
 ```
 
+**IMPORTANT**: For abandoned form/cart workflows, **ALWAYS** use `'Form Started'`, **NEVER** use `'Form Unsubmitted'`. The `'Form Unsubmitted'` event is deprecated.
+
 ### Trigger Event Examples
 
 **1. Form Submitted**
@@ -394,7 +567,7 @@ type AutomationTriggerEventType =
 }
 ```
 
-**2. Field Equals**
+**3. Field Equals**
 ```typescript
 {
   type: 'Field Equals',
@@ -405,7 +578,7 @@ type AutomationTriggerEventType =
 }
 ```
 
-**3. Tag Added**
+**4. Tag Added**
 ```typescript
 {
   type: 'Tag Added',
