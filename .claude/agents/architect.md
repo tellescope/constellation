@@ -78,17 +78,25 @@ Brief overview of what the customer is trying to achieve
 ### 2. Resource Inventory
 List all resources needed, grouped by type:
 ```
+Organization Settings (ALWAYS LIST FIRST):
+  Custom Fields:
+    - Field Name (Type, Options, Purpose) - e.g., "Insurance Provider" (Select, [...], for filtering)
+  Roles:
+    - Role Name (Purpose)
+  Tags:
+    - Tag Name (Usage in automation/filtering)
+
 Forms:
-  - Form Name (purpose, key fields)
+  - Form Name (purpose, key fields, maps to which custom fields)
 
 MessageTemplates:
-  - Template Name (channel, purpose, variables needed)
+  - Template Name (channel, purpose, variables needed, uses which custom fields)
 
 Journeys:
-  - Journey Name (trigger, steps, purpose)
+  - Journey Name (trigger, steps, purpose, conditional logic on which custom fields)
 
 AutomationTriggers:
-  - Trigger Name (event, action, purpose)
+  - Trigger Name (event, action, purpose, watches which custom fields)
 
 CalendarEventTemplates:
   - Template Name (duration, settings)
@@ -113,21 +121,31 @@ Visual representation of how resources reference each other:
 ### 4. Implementation Sequence
 Ordered list of steps with agent assignments:
 ```
+Step 0: Configure Organization (organization-builder) **[IF CUSTOM FIELDS/ROLES/TAGS NEEDED]**
+  - Custom Fields: "Insurance Provider" (Select), "Member ID" (Text), "Risk Level" (Select)
+  - Roles: [if needed]
+  - Tags: "New Patient", "High Risk" [if needed]
+  → Outputs: Field names, role names, tag names
+  → Critical: Must be Step 0 if any other resources reference these
+
 Step 1: Create Forms (form-builder)
-  - Intake Form
+  - Intake Form (maps to custom fields: "Insurance Provider", "Member ID")
   - Health History Form
   → Outputs: intakeFormId, healthHistoryFormId
+  → Dependencies: Needs custom field names from Step 0
 
 Step 2: Create Message Templates (message-template-builder)
-  - Welcome Email (references: intakeFormId)
+  - Welcome Email (references: intakeFormId, uses custom field variables: {{enduser.Insurance Provider}})
   - Reminder Email (references: intakeFormId)
   → Outputs: welcomeTemplateId, reminderTemplateId
-  → Dependencies: Needs intakeFormId from Step 1
+  → Dependencies: Needs intakeFormId from Step 1, custom field names from Step 0
 
 Step 3: Create Journey (automation-builder)
   - Onboarding Journey (references: welcomeTemplateId, reminderTemplateId, intakeFormId)
+  - Conditional logic: Filter by "Risk Level" custom field
+  - Actions: Add "High Risk" tag if Risk Level = "High"
   → Outputs: onboardingJourneyId
-  → Dependencies: Needs templateIds from Step 2, intakeFormId from Step 1
+  → Dependencies: Needs templateIds from Step 2, intakeFormId from Step 1, custom fields/tags from Step 0
 
 Step 4: Create Trigger (automation-builder)
   - Form Submit Trigger (references: intakeFormId, onboardingJourneyId)
