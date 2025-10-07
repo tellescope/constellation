@@ -507,10 +507,29 @@ const journey = await session.api.journeys.createOne({
   tags: ['onboarding', 'new-patient']
 })
 
-// 2. Step 1: Send welcome email on journey start
+// 2. Step 1: Set status on journey start (REQUIRED - cannot start with a delay)
+// IMPORTANT: Journeys cannot start with a delay, so we use setEnduserStatus as the first step
 const step1 = await session.api.automation_steps.createOne({
   journeyId: journey.id,
   events: [{ type: 'onJourneyStart', info: {} }],
+  action: {
+    type: 'setEnduserStatus',
+    info: { status: 'Onboarding Journey' }  // Often use journey title or arbitrary status
+  }
+})
+
+// 2b. Step 2: Send welcome email immediately after status set
+const step2 = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{
+    type: 'afterAction',
+    info: {
+      automationStepId: step1.id,
+      delayInMS: 0,
+      delay: 0,
+      unit: 'Minutes'
+    }
+  }],
   action: {
     type: 'sendEmail',
     info: {
@@ -521,13 +540,13 @@ const step1 = await session.api.automation_steps.createOne({
   }
 })
 
-// 3. Step 2: Send intake form after 1 hour
-const step2 = await session.api.automation_steps.createOne({
+// 3. Step 3: Send intake form after 1 hour delay
+const step3 = await session.api.automation_steps.createOne({
   journeyId: journey.id,
   events: [{
     type: 'afterAction',
     info: {
-      automationStepId: step1.id,
+      automationStepId: step2.id,
       delayInMS: 3600000,  // 1 hour
       delay: 1,
       unit: 'Hours'
@@ -543,12 +562,12 @@ const step2 = await session.api.automation_steps.createOne({
   }
 })
 
-// 4. Step 3: Add tag when form submitted
-const step3 = await session.api.automation_steps.createOne({
+// 4. Step 4: Add tag when form submitted
+const step4 = await session.api.automation_steps.createOne({
   journeyId: journey.id,
   events: [{
     type: 'formResponse',
-    info: { automationStepId: step2.id }
+    info: { automationStepId: step3.id }
   }],
   action: {
     type: 'addEnduserTags',
@@ -561,7 +580,7 @@ const errorStep = await session.api.automation_steps.createOne({
   journeyId: journey.id,
   events: [{
     type: 'onError',
-    info: { automationStepId: step2.id }
+    info: { automationStepId: step3.id }
   }],
   action: {
     type: 'createTicket',
@@ -570,6 +589,73 @@ const errorStep = await session.api.automation_steps.createOne({
       message: 'Automated form send failed - manual follow-up needed',
       priority: 'High'
     }
+  }
+})
+```
+
+### Pattern 1b: Journey with Delayed Start (Common Pattern)
+```typescript
+// IMPORTANT: This pattern demonstrates how to start a journey with a delay
+// Since journeys CANNOT start with a delay directly, we use setEnduserStatus first
+
+const journey = await session.api.journeys.createOne({
+  title: 'Follow-up Reminder Journey',
+  description: 'Send a reminder 2 days after enrollment',
+  defaultState: 'waiting',
+  states: [
+    { name: 'waiting', priority: 'Medium' },
+    { name: 'completed', priority: 'Low' }
+  ]
+})
+
+// Step 1: REQUIRED first step - cannot be a delay
+// Use setEnduserStatus with journey title or arbitrary status
+const step1 = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{ type: 'onJourneyStart', info: {} }],
+  action: {
+    type: 'setEnduserStatus',
+    info: { status: 'Follow-up Reminder Journey' }  // Use journey title as status
+  }
+})
+
+// Step 2: Now we can apply the delay before the real action
+const step2 = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{
+    type: 'afterAction',
+    info: {
+      automationStepId: step1.id,
+      delayInMS: 172800000,  // 2 days in milliseconds
+      delay: 2,
+      unit: 'Days'
+    }
+  }],
+  action: {
+    type: 'sendEmail',
+    info: {
+      senderId: session.userInfo.id,
+      subject: 'Reminder: Complete your health assessment',
+      htmlMessage: '<p>This is a friendly reminder to complete your assessment.</p>'
+    }
+  }
+})
+
+// Step 3: Follow-up actions after the reminder
+const step3 = await session.api.automation_steps.createOne({
+  journeyId: journey.id,
+  events: [{
+    type: 'afterAction',
+    info: {
+      automationStepId: step2.id,
+      delayInMS: 0,
+      delay: 0,
+      unit: 'Minutes'
+    }
+  }],
+  action: {
+    type: 'setEnduserStatus',
+    info: { status: 'Reminder Sent' }
   }
 })
 ```
@@ -895,6 +981,8 @@ const errorHandler = await session.api.automation_steps.createOne({
    - Consider using `onIncomingEnduserCommunication: 'Remove'` for automated journeys
 
 2. **AutomationStep Ordering**
+   - **CRITICAL**: Journeys **cannot** start with a delay. The first step must be an immediate action (no `afterAction` with delay on `onJourneyStart`)
+   - **Common Pattern**: Start with a `setEnduserStatus` action (often using the journey title or an arbitrary status), then use `afterAction` with a delay for the second step
    - Start with an `onJourneyStart` event for the first step
    - Chain subsequent steps with `afterAction` events
    - Track step IDs carefully to maintain proper flow
