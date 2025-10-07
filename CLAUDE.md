@@ -41,6 +41,12 @@ Creates MessageTemplates with modern, mobile-optimized HTML
 - **Key expertise**: Responsive HTML, inline CSS, template variables, mobile optimization
 - **Collaborates with**: automation-builder (provides templates for Journey steps)
 
+#### 📅 **calendar-builder**
+Creates CalendarEventTemplates, AppointmentLocations, and AppointmentBookingPages
+- **Use for**: Appointment types, booking pages, location setup, scheduling configuration
+- **Outputs**: TypeScript code using `session.api.calendar_event_templates`, `session.api.appointment_locations`, `session.api.appointment_booking_pages`
+- **Key expertise**: Appointment templates, reminders, booking restrictions, multi-location setup, telehealth configuration
+
 ### Quality Assurance Agent
 
 #### ✅ **script-evaluator**
@@ -239,6 +245,7 @@ setupAccount()
   - `form-builder.md` - Expert at creating Tellescope Forms and FormFields
   - `automation-builder.md` - Expert at creating Journeys and automation workflows
   - `message-template-builder.md` - Expert at creating mobile-optimized MessageTemplates
+  - `calendar-builder.md` - Expert at creating CalendarEventTemplates, AppointmentLocations, and AppointmentBookingPages
   - `script-evaluator.md` - Reviews scripts for correctness and best practices
 
 ## Workflow
@@ -314,6 +321,13 @@ Task({
   description: 'Build appointment reminder template',
   prompt: 'Using the message-template-builder agent in .claude/agents/message-template-builder.md, generate TypeScript code to create a mobile-optimized appointment reminder email template with calendar event variables...'
 })
+
+// Example: Calendar configuration
+Task({
+  subagent_type: 'general-purpose',
+  description: 'Build appointment booking system',
+  prompt: 'Using the calendar-builder agent in .claude/agents/calendar-builder.md, generate TypeScript code to create appointment templates for Initial Consultation (60 min) and Follow-Up (30 min), a Telehealth location, and a booking page that includes both templates...'
+})
 ```
 
 ### Invoking the Evaluator Agent
@@ -332,6 +346,7 @@ Task({
 - ✅ After form-builder generates form creation code
 - ✅ After automation-builder generates journey code
 - ✅ After message-template-builder generates template code
+- ✅ After calendar-builder generates calendar configuration code
 - ✅ Before combining multiple scripts into a composite script
 - ✅ Before providing any script to the user
 
@@ -380,6 +395,19 @@ Task({
 8. ✅ Provide script to user with suggested filename `create-onboarding-journey.ts`
 9. ✅ Respond with confirmation and usage instructions
 
+**User**: "Set up appointment booking for my practice - I need Initial Consultation and Follow-Up appointment types, and I offer both in-person and telehealth"
+
+**You**:
+1. ✅ Invoke **calendar-builder** agent with appointment requirements
+2. ✅ calendar-builder generates code for 2 locations (office + telehealth)
+3. ✅ calendar-builder generates code for 2 appointment templates (consultation + follow-up)
+4. ✅ calendar-builder generates code for booking page linking templates and locations
+5. ✅ Invoke **script-evaluator** to review the calendar configuration code
+6. ✅ Apply fixes for any issues identified
+7. ✅ Wrap code in standalone script structure
+8. ✅ Provide script to user with suggested filename `setup-appointment-booking.ts`
+9. ✅ Respond with confirmation, usage instructions, and booking page URL
+
 ## Script Composition Example
 
 When a user needs multiple independent features set up, create individual composable scripts plus a main setup script:
@@ -399,7 +427,7 @@ This allows users to:
 ## Key Reminders
 
 ### Code Generation & Quality
-- **DO**: Use specialized builder agents for code generation (form-builder, automation-builder, message-template-builder)
+- **DO**: Use specialized builder agents for code generation (form-builder, automation-builder, message-template-builder, calendar-builder)
 - **DO**: **ALWAYS** run script-evaluator after builder agents generate code
 - **DO**: Fix critical issues identified by script-evaluator before saving
 - **DO**: Allow agents to collaborate (automation-builder + message-template-builder)
