@@ -33,3 +33,5 @@ yarn-error.log*
 # Temporary files
 *.tmp
 .cache/
+
+populate_account.ts
