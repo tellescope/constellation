@@ -65,7 +65,7 @@ async function run(): Promise<void> {
     const welcomeField = await session.api.form_fields.createOne({
       formId: form.id,
       title: 'About the PHQ-9',
-      type: 'Rich Text',
+      type: 'description',
       htmlDescription: '<p>The PHQ-9 is a brief questionnaire used to screen for depression. It asks about common symptoms of depression and how often you have experienced them over the past two weeks.</p><p>Your responses will help your healthcare provider understand your current mental health and determine if further evaluation or treatment may be beneficial.</p>',
       previousFields: [{ type: 'root', info: {} }],
     })
@@ -74,7 +74,7 @@ async function run(): Promise<void> {
     const instructionsField = await session.api.form_fields.createOne({
       formId: form.id,
       title: 'Instructions',
-      type: 'Rich Text',
+      type: 'description',
       htmlDescription: '<p><strong>Over the last 2 weeks, how often have you been bothered by any of the following problems?</strong></p><p>Please select one answer for each question.</p>',
       previousFields: [{ type: 'after', info: { fieldId: welcomeField.id } }],
     })
