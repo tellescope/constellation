@@ -14,8 +14,8 @@ Account configuration scripts for Tellescope using the [@tellescope/sdk](https:/
 ```
 constellation/
 ├── .claude/agents/          # Claude Code agents
-├── src/scripts/            # Configuration scripts
-├── config/                 # Environment configurations and templates
+├── examples/               # Example scripts and templates (reference only)
+├── config/                 # Environment configurations
 └── tests/                  # Test files
 ```
 
@@ -69,7 +69,7 @@ node dist/scripts/script-name.js
 
 #### Direct execution with ts-node (for development):
 ```bash
-npx ts-node src/scripts/script-name.ts
+npx ts-node path/to/script-name.ts
 ```
 
 ## Creating New Scripts
@@ -78,7 +78,7 @@ Scripts in Constellation follow a composable pattern that allows them to work bo
 
 ### Composable Script Pattern
 
-Create scripts in `src/scripts/` that export a main function accepting an optional Session parameter:
+See `examples/` for reference templates. Scripts should export a main function accepting an optional Session parameter:
 
 ```typescript
 import * as dotenv from 'dotenv';
@@ -131,8 +131,12 @@ if (require.main === module) {
 ```
 
 This pattern enables:
-- **Standalone execution**: `npx ts-node src/scripts/my-script.ts`
+- **Standalone execution**: `npx ts-node my-script.ts`
 - **Composable imports**: Other scripts can import and run your script with a shared session
+
+**Reference Examples:**
+- `examples/basic-script.ts` - Basic composable script template
+- `examples/create-phq9-form.ts` - Complete PHQ-9 form creation example
 
 ## Development
 

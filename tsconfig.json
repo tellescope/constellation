@@ -17,7 +17,7 @@
     "types": ["node", "jest"]
   },
   "include": [
-    "src/**/*",
+    "examples/**/*",
     ".claude/**/*"
   ],
   "exclude": [

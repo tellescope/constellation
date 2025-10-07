@@ -103,9 +103,9 @@ User Request → Multiple builder agents in parallel:
    - Add proper error handling and logging
    - Include documentation comments
 
-5. **Save to `src/scripts/`**
-   - Use a descriptive filename
-   - Save as TypeScript (`.ts`)
+5. **Save generated scripts for user's production use**
+   - Generated scripts should be saved to a user-specified location or provided for manual saving
+   - Use descriptive kebab-case filenames (e.g., `create-phq9-form.ts`, `setup-initial-users.ts`)
 
 6. **Provide usage instructions**
    - Show how to build and run the script
@@ -222,19 +222,19 @@ setupAccount()
 
 ## File Locations
 
-### Scripts
-- **Save all scripts to**: `src/scripts/`
-- **Naming convention**: Use descriptive kebab-case names (e.g., `create-phq9-form.ts`, `setup-initial-users.ts`)
-- **Never save to**: `src/scripts/examples/` (reserved for framework examples)
-
-### Templates
-- **Script templates**: `config/script-templates/` (reference only, don't modify)
+### Examples (Reference Only)
+- **Example scripts**: `examples/` (reference examples for agents - do not modify)
+  - `basic-script.ts` - Basic composable script template
+  - `create-phq9-form.ts` - Complete PHQ-9 form creation example
 - **Environment example**: `.env.example` (for documentation)
 
 ### Agents
 - **Agent definitions**: `.claude/agents/` (specialized code generators)
-- **Example agents**:
+- **Available agents**:
   - `form-builder.md` - Expert at creating Tellescope Forms and FormFields
+  - `automation-builder.md` - Expert at creating Journeys and automation workflows
+  - `message-template-builder.md` - Expert at creating mobile-optimized MessageTemplates
+  - `script-evaluator.md` - Reviews scripts for correctness and best practices
 
 ## Workflow
 
@@ -254,9 +254,9 @@ setupAccount()
    - Add proper error handling and logging
    - Include documentation comments
 
-4. **Save to `src/scripts/`**
-   - Use a descriptive filename
-   - Save as TypeScript (`.ts`)
+4. **Save generated scripts for user's production use**
+   - Generated scripts should be saved to a user-specified location or provided for manual saving
+   - Use descriptive kebab-case filenames
 
 5. **Provide usage instructions**
    - Show how to build and run the script
@@ -273,7 +273,7 @@ node dist/scripts/script-name.js
 
 ### Direct execution with ts-node (for development):
 ```bash
-npx ts-node src/scripts/script-name.ts
+npx ts-node path/to/script-name.ts
 ```
 
 ## Environment Variables
@@ -328,7 +328,7 @@ Task({
 - ✅ After automation-builder generates journey code
 - ✅ After message-template-builder generates template code
 - ✅ Before combining multiple scripts into a composite script
-- ✅ Before saving any script to `src/scripts/`
+- ✅ Before providing any script to the user
 
 **What to do with feedback:**
 1. Read the script-evaluator's categorized issues
@@ -359,7 +359,7 @@ Task({
 3. ✅ Invoke **script-evaluator** agent to review the generated code
 4. ✅ Apply fixes for any critical issues identified
 5. ✅ Wrap code in standalone script structure
-6. ✅ Save to `src/scripts/create-phq9-form.ts`
+6. ✅ Provide script to user with suggested filename `create-phq9-form.ts`
 7. ✅ Respond with confirmation and usage instructions
 
 **User**: "Create a patient onboarding journey with welcome emails"
@@ -372,7 +372,7 @@ Task({
 5. ✅ Invoke **script-evaluator** to review the complete workflow code
 6. ✅ Apply fixes for any issues identified
 7. ✅ Wrap code in standalone script structure
-8. ✅ Save to `src/scripts/create-onboarding-journey.ts`
+8. ✅ Provide script to user with suggested filename `create-onboarding-journey.ts`
 9. ✅ Respond with confirmation and usage instructions
 
 ## Script Composition Example
@@ -380,16 +380,16 @@ Task({
 When a user needs multiple independent features set up, create individual composable scripts plus a main setup script:
 
 **Individual Scripts:**
-- `src/scripts/create-phq9-form.ts` - Exports `createPHQ9Form(session?: Session)`
-- `src/scripts/setup-users.ts` - Exports `setupUsers(session?: Session)`
-- `src/scripts/configure-workflows.ts` - Exports `configureWorkflows(session?: Session)`
+- `create-phq9-form.ts` - Exports `createPHQ9Form(session?: Session)`
+- `setup-users.ts` - Exports `setupUsers(session?: Session)`
+- `configure-workflows.ts` - Exports `configureWorkflows(session?: Session)`
 
 **Main Setup Script:**
-- `src/scripts/setup-account.ts` - Imports and runs all individual scripts
+- `setup-account.ts` - Imports and runs all individual scripts
 
 This allows users to:
-- Run individual scripts: `npx ts-node src/scripts/create-phq9-form.ts`
-- Run everything at once: `npx ts-node src/scripts/setup-account.ts`
+- Run individual scripts: `npx ts-node create-phq9-form.ts`
+- Run everything at once: `npx ts-node setup-account.ts`
 
 ## Key Reminders
 
@@ -402,8 +402,8 @@ This allows users to:
 ### Script Structure
 - **DO**: Export a main function that accepts optional Session parameter
 - **DO**: Support both standalone and composed execution with `require.main === module`
-- **DO**: Save all scripts to `src/scripts/`
 - **DO**: Create composite scripts when multiple features are requested together
+- **DO**: Refer to `examples/` for script structure templates and patterns
 
 ### Common Pitfalls
 - **DON'T**: Skip the script-evaluator review step
