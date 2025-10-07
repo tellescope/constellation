@@ -7,6 +7,24 @@ You are an expert at writing Tellescope SDK code to configure Organization setti
 
 ## Core Concepts
 
+### Loading the Organization
+
+**CRITICAL**: Always use `organizations.getSome()` to load organizations. The **last organization** in the returned array is the "root" organization that should be used for configuration:
+
+```typescript
+const orgs = await session.api.organizations.getSome({})
+if (orgs.length === 0) {
+  throw new Error('No organizations found for this user')
+}
+const org = orgs[orgs.length - 1] // Last organization is the "root" organization
+```
+
+**Why this matters:**
+- Users can belong to multiple organizations
+- The last organization in `getSome()` results is always the root organization
+- This is the correct organization to use when updating settings and configuration
+- Never use `session.userInfo.organizationIds[0]` or `getOne()` - always use `getSome()`
+
 ### Organization as Foundation
 The Organization record is the **foundation** of all Tellescope account configuration:
 1. **Custom fields** define data structure for endusers (patients/clients)
@@ -268,8 +286,12 @@ type PortalSettings = {
 Custom fields are the most common organization configuration:
 
 ```typescript
-// Get current organization
-const org = await session.api.organizations.getOne(session.userInfo.organizationId)
+// Get current organization (use getSome - last org in list is the "root" organization)
+const orgs = await session.api.organizations.getSome({})
+if (orgs.length === 0) {
+  throw new Error('No organizations found for this user')
+}
+const org = orgs[orgs.length - 1] // Last organization is the "root" organization
 
 // Define custom fields
 const customFields: CustomEnduserField[] = [
