@@ -5,23 +5,16 @@ Account configuration scripts for Tellescope using the [@tellescope/sdk](https:/
 ## Features
 
 - 🚀 TypeScript-first configuration scripts with full type safety
-- 🤖 Claude Code agent integration for script generation and execution
-- 🔧 CLI interface for easy script management
-- ✅ Validation, execution, and rollback lifecycle hooks
+- 🤖 Claude Code agent integration for script generation
+- 📦 Composable, standalone scripts that can be imported or run independently
 - 🧪 Testing framework with Jest
-- 📦 Extensible script registry system
 
 ## Project Structure
 
 ```
 constellation/
 ├── .claude/agents/          # Claude Code agents
-├── src/
-│   ├── core/               # SDK client and shared types
-│   ├── scripts/            # Configuration scripts
-│   │   └── examples/       # Example scripts
-│   ├── utils/              # Utilities (logger, validation, error handling)
-│   └── cli/                # Command-line interface
+├── src/scripts/            # Configuration scripts
 ├── config/                 # Environment configurations and templates
 └── tests/                  # Test files
 ```
@@ -64,99 +57,82 @@ npm run build
 
 ## Usage
 
-### List Available Scripts
+### Running Scripts
 
+Scripts can be executed in two ways:
+
+#### Build and run (recommended for production):
 ```bash
-npm run script -- --list
+npm run build
+node dist/scripts/script-name.js
 ```
 
-### Run a Script
-
+#### Direct execution with ts-node (for development):
 ```bash
-npm run script -- <script-name> [options]
-```
-
-#### Options
-
-- `-e, --env <environment>` - Environment: development, staging, production (default: development)
-- `-d, --dry-run` - Run in dry-run mode (no changes made)
-- `-l, --list` - List all available scripts
-- `-h, --help` - Show help message
-
-#### Examples
-
-```bash
-# Run setup-users script in production
-npm run script -- setup-users --env production
-
-# Run configure-workflows in dry-run mode
-npm run script -- configure-workflows --dry-run
-
-# List all available scripts
-npm run script -- --list
+npx ts-node src/scripts/script-name.ts
 ```
 
 ## Creating New Scripts
 
-### Using the Basic Script Template
+Scripts in Constellation follow a composable pattern that allows them to work both independently and as importable modules.
 
-For standalone scripts that don't need to integrate with the CLI, use the basic script template:
+### Composable Script Pattern
 
-```bash
-cp config/script-templates/basic-script.ts my-script.ts
-```
-
-The template includes:
-- Session initialization with environment variables
-- Environment variable validation
-- Error handling with async/await
-- Clean exit codes
-
-Run the script directly:
-```bash
-npm run build && node dist/my-script.js
-```
-
-### Creating CLI-Integrated Scripts
-
-1. Create a new file in `src/scripts/` or `src/scripts/examples/`
-2. Extend the `BaseScript` class:
+Create scripts in `src/scripts/` that export a main function accepting an optional Session parameter:
 
 ```typescript
-import { BaseScript } from '../base-script';
-import { ScriptContext, ScriptResult } from '../../core/types';
-import { ScriptRegistry } from '../index';
+import * as dotenv from 'dotenv';
+import { Session } from '@tellescope/sdk';
 
-class MyCustomScript extends BaseScript {
-  name = 'my-custom-script';
-  description = 'Description of what this script does';
+// Load environment variables (only if running standalone)
+if (require.main === module) {
+  dotenv.config();
+}
 
-  async validate(context: ScriptContext): Promise<void> {
-    // Validation logic
-  }
+/**
+ * Main configuration function that can be imported or run standalone
+ */
+export async function configureMyFeature(session?: Session): Promise<void> {
+  // Create session if not provided (for standalone execution)
+  const sess = session ?? new Session({
+    host: process.env.TELLESCOPE_HOST,
+    apiKey: process.env.TELLESCOPE_API_KEY,
+  });
 
-  async execute(context: ScriptContext): Promise<ScriptResult> {
-    const { client, dryRun } = context;
+  try {
+    console.log('Configuring my feature...');
 
     // Your implementation here
 
-    return {
-      success: true,
-      message: 'Script completed successfully',
-    };
-  }
-
-  async rollback(context: ScriptContext): Promise<void> {
-    // Optional rollback logic
+    console.log('My feature configured successfully');
+  } catch (error) {
+    console.error('Failed to configure my feature:', error);
+    throw error;
   }
 }
 
-// Register the script
-ScriptRegistry.register(new MyCustomScript());
+// Standalone execution (only runs if called directly, not imported)
+if (require.main === module) {
+  if (!process.env.TELLESCOPE_API_KEY) {
+    console.error('Error: TELLESCOPE_API_KEY environment variable is required');
+    process.exit(1);
+  }
+
+  configureMyFeature()
+    .then(() => {
+      console.log('Done');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('Fatal error:', error);
+      process.exit(1);
+    });
+}
 ```
 
-3. Import the script in `src/cli/index.ts` to register it
-4. Build and run: `npm run build && npm run script -- my-custom-script`
+This pattern enables:
+- **Standalone execution**: `npx ts-node src/scripts/my-script.ts`
+- **Composable imports**: Other scripts can import and run your script with a shared session
 
 ## Development
 
@@ -183,10 +159,14 @@ npm run build:watch
 
 ## Claude Code Agents
 
-This repository includes Claude Code agents in `.claude/agents/` for:
+This repository includes specialized Claude Code agents in `.claude/agents/` for generating Tellescope SDK scripts:
 
-- **script-generator**: Generate new configuration scripts from natural language descriptions
-- **script-runner**: Execute and manage script execution
+- **form-builder**: Creates Forms and FormFields with proper ordering and validation
+- **automation-builder**: Creates Journeys, AutomationSteps, and AutomationTriggers
+- **message-template-builder**: Creates MessageTemplates with modern, mobile-optimized HTML
+- **script-evaluator**: Reviews and validates scripts for correctness and best practices
+
+See [CLAUDE.md](CLAUDE.md) for detailed instructions on using these agents.
 
 ## License
 
