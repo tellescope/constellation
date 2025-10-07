@@ -99,61 +99,142 @@ type CustomEnduserField =
 
 ```typescript
 type OrganizationSettings = {
+  // Dashboard Settings
+  dashboard?: {
+    view?: CustomDashboardView           // Custom dashboard view configuration
+  },
+
   // Enduser (Patient/Client) Settings
   endusers?: {
     // Custom fields - MOST IMPORTANT
-    customFields?: CustomEnduserField[]   // Define custom data fields
+    customFields?: CustomEnduserField[]  // Define custom data fields
+    builtinFields?: EnduserBuiltInField[] // Show/hide built-in fields
+    disableAdhocFields?: boolean         // Prevent creating fields on-the-fly
+    tags?: string[]                      // Predefined enduser tags
 
-    // Built-in field configuration
-    disableAdhocFields?: boolean          // Prevent creating fields on-the-fly
+    // Chat & Communication
+    disableMultipleChatRooms?: boolean   // Limit to single chat room per enduser
+    autoReplyEnabled?: boolean           // Enable auto-replies
+    disableAutoreplyForCustomEntities?: boolean // Disable auto-reply for custom entities
+    defaultPhoneNumber?: string          // Default outbound phone number
+    sendSMSOnZoomStart?: boolean         // Send SMS when Zoom call starts
+    enableGroupMMS?: boolean             // Allow group MMS messages
+    matchEmailAndNames?: boolean         // Match endusers by email/name
+    sharedInboxReadStatus?: boolean      // Share read status across team
+    dontMarkReadForAssigned?: boolean    // Don't auto-mark read for assigned items
+    inboxRepliesMarkRead?: boolean       // Mark inbox items read on reply
+    delayedReadingIntervalInMS?: number  // Delay before marking read (milliseconds)
 
-    // Tags
-    tags?: string[]                       // Predefined enduser tags
+    // Call Recording & Transcription
+    recordCalls?: boolean                // Record phone calls
+    recordCallAudioPlayback?: string     // Audio playback for recording notice
+    dontRecordCallsToPhone?: string[]    // Phone numbers to exclude from recording
+    transcribeCalls?: boolean            // Transcribe phone calls
+    transcribeCallInboundPlayback?: string // Audio for transcription notice
+    showDeleteCallRecordingOnTimeline?: boolean // Show delete option for recordings
+    showDownloadCallRecordings?: boolean // Allow downloading recordings
+    loopQueueCallSound?: boolean         // Loop queue call sound
+    canMoveCalls?: boolean               // Allow moving calls between endusers
+    canMoveSMS?: boolean                 // Allow moving SMS between endusers
+    defaultToOutboundConferenceCall?: boolean // Default to conference calling
 
-    // Communication
-    autoReplyEnabled?: boolean            // Enable auto-replies
-    recordCalls?: boolean                 // Record phone calls
-    transcribeCalls?: boolean             // Transcribe phone calls
-    defaultPhoneNumber?: string           // Default outbound phone
-    enableGroupMMS?: boolean              // Allow group MMS messages
+    // Notes & Documentation
+    showFreeNote?: boolean               // Show free-text notes field
+    autoSaveFreeNote?: boolean           // Auto-save free notes
+    canDeleteFreeNote?: boolean          // Allow deleting free notes
+    hideNotesFromComposeForm?: boolean   // Hide notes from compose form
+    detailField?: string                 // Field to use for detail view
 
-    // UI/UX
-    showFreeNote?: boolean                // Show free-text notes field
-    enableAccessTags?: boolean            // Tag-based access control
-    inboxRepliesMarkRead?: boolean        // Mark inbox items read on reply
-    reverseTimeline?: boolean             // Reverse chronological order
+    // Calendar & Events
+    disableCalendarEventAutoAssignment?: boolean // Disable auto-assignment of events
 
-    // And many more specific settings...
-  },
+    // Files & Documents
+    flaggedFileText?: string             // Text for flagged files
+    defaultHideFilesFromPortal?: boolean // Hide files from portal by default
 
-  // Calendar Settings
-  calendar?: {
-    dayStart?: { hour: number, minute: number }     // Calendar view start time
-    dayEnd?: { hour: number, minute: number }       // Calendar view end time
-    templateRequired?: boolean                      // Require template for events
-    locationRequired?: boolean                      // Require location for events
-    cancelReasons?: string[]                        // Predefined cancellation reasons
-    bookingStartOffset?: { month?: number, day?: number, hour?: number }
-    bookingEndOffset?: { month?: number, day?: number, hour?: number }
+    // Forms & Data Entry
+    showBulkFormInput?: boolean          // Show bulk form input option
+    autofillSignature?: boolean          // Auto-fill signature fields
+
+    // Medical/Clinical
+    showFullVitalsTab?: boolean          // Show full vitals tab
+    alwaysShowInsurance?: boolean        // Always show insurance info
+    showOrdersInSidebar?: boolean        // Show orders in sidebar
+    showDiagnoses?: boolean              // Show diagnoses
+    showDeviceOrders?: boolean           // Show device orders
+    requireObservationInvalidationReason?: boolean // Require reason for invalidating observations
+    hideUnorderedFullscriptMeds?: boolean // Hide unordered Fullscript medications
+    launchDosespotWebhookURL?: string    // Webhook URL for Dosespot integration
+
+    // Access & Permissions
+    enableAccessTags?: boolean           // Tag-based access control
+    createChatRoomWithBlankUserIds?: boolean // Allow chat rooms without user IDs
+
+    // UI/Timeline
+    reverseTimeline?: boolean            // Reverse chronological timeline order
   },
 
   // Ticket Settings
   tickets?: {
-    defaultJourneyDueDateOffsetInMS?: number | ''   // Default due date offset
-    disableSnooze?: boolean                         // Disable snooze feature
-    requireDueDate?: boolean                        // Require due date
-    allowArchival?: boolean                         // Allow archiving tickets
+    defaultJourneyDueDateOffsetInMS?: number | '' // Default due date offset (milliseconds)
+    disableSnooze?: boolean              // Disable snooze feature
+    showCommunications?: boolean         // Show communications in ticket view
+    showJourneys?: boolean               // Show journeys in ticket view
+    requireDueDate?: boolean             // Require due date on tickets
+    allowArchival?: boolean              // Allow archiving closed tickets
+    returnToTicketsList?: boolean        // Return to list after closing ticket
+    dontAddToCareTeamOnTicketAssignment?: boolean // Don't auto-add to care team
+  },
+
+  // Calendar Settings
+  calendar?: {
+    dayStart?: {                         // Calendar view start time
+      hour: number,                      // Hour (0-23)
+      minute: number                     // Minute (0-59)
+    },
+    dayEnd?: {                           // Calendar view end time
+      hour: number,                      // Hour (0-23)
+      minute: number                     // Minute (0-59)
+    },
+    bookingStartOffset?: {               // Earliest bookable time (from now)
+      month?: number,                    // Months ahead
+      day?: number,                      // Days ahead
+      hour?: number                      // Hours ahead
+    },
+    bookingEndOffset?: {                 // Latest bookable time (from now)
+      month?: number,                    // Months ahead
+      day?: number,                      // Days ahead
+      hour?: number                      // Hours ahead
+    },
+    templateRequired?: boolean           // Require template for all events
+    locationRequired?: boolean           // Require location for all events
+    cancelReasons?: string[]             // Predefined cancellation reasons
+    copyRemindersByDefault?: boolean     // Copy reminders when rescheduling
+    showMakeRecurringOnProfile?: boolean // Show "make recurring" option on profiles
   },
 
   // User Settings
   users?: {
-    sessionDurationInHours?: number       // Session timeout duration
+    sessionDurationInHours?: number      // Session timeout duration (hours)
+  },
+
+  // Integration Settings
+  integrations?: {
+    vitalLabOrderPhysicianOptional?: boolean // Make physician optional for Vital lab orders
+    athenaAppointmentSyncJITSeconds?: number // Athena appointment sync timing (seconds)
   },
 
   // Interface Settings
   interface?: {
-    dontPersistSearches?: boolean         // Don't save search filters
-    showEndusersV2?: boolean              // Use V2 enduser interface
+    dontPersistSearches?: boolean        // Don't save search filters
+    showEndusersV2?: boolean             // Use V2 enduser interface
+    showInboxV2?: boolean                // Use V2 inbox interface
+    showDialerInTopbar?: boolean         // Show dialer in top navigation bar
+  },
+
+  // Time Tracking Settings
+  timeTracking?: {
+    enabled?: boolean                    // Enable time tracking features
   }
 }
 ```
@@ -172,8 +253,11 @@ type PortalSettings = {
   showAppointments?: boolean              // Show appointments tab
   showDocuments?: boolean                 // Show documents tab
   showForms?: boolean                     // Show forms tab
-
-  // And more portal-specific settings...
+  showMessaging?: boolean                 // Show messaging/chat tab
+  showFiles?: boolean                     // Show files tab
+  showRecords?: boolean                   // Show health records tab
+  showCalendar?: boolean                  // Show calendar view
+  showTasks?: boolean                     // Show tasks tab
 }
 ```
 
