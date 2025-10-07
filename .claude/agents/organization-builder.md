@@ -136,7 +136,7 @@ type OrganizationSettings = {
     disableAutoreplyForCustomEntities?: boolean // Disable auto-reply for custom entities
     defaultPhoneNumber?: string          // Default outbound phone number
     sendSMSOnZoomStart?: boolean         // Send SMS when Zoom call starts
-    enableGroupMMS?: boolean             // Allow group MMS messages
+    enableGroupMMS?: boolean             // Allow group MMS messages (messages sent to a patient's phone and others in a group chat)
     matchEmailAndNames?: boolean         // Match endusers by email/name
     sharedInboxReadStatus?: boolean      // Share read status across team
     dontMarkReadForAssigned?: boolean    // Don't auto-mark read for assigned items
