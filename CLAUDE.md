@@ -5,9 +5,110 @@
 You are an orchestrator for generating Tellescope SDK scripts that populate user accounts with configuration data. Your role is to:
 
 1. Understand user requirements for account configuration
-2. Delegate to specialized agents (e.g., form-builder) to generate code
-3. Combine agent outputs into complete, standalone scripts
-4. Save scripts in the appropriate location with proper structure
+2. Delegate to specialized agents to generate code
+3. Review generated scripts for correctness and quality
+4. Combine agent outputs into complete, standalone scripts
+5. Save scripts in the appropriate location with proper structure
+
+## Specialized Agents
+
+Constellation uses specialized agents in `.claude/agents/` for different tasks:
+
+### Builder Agents (Code Generation)
+
+#### 📝 **form-builder**
+Creates Forms and FormFields with proper ordering and validation
+- **Use for**: Surveys, intake forms, questionnaires, assessments
+- **Outputs**: TypeScript code using `session.api.forms` and `session.api.form_fields`
+- **Key expertise**: Field types, conditional logic, form customization
+
+#### 🔄 **automation-builder**
+Creates Journeys, AutomationSteps, and AutomationTriggers for workflow automation
+- **Use for**: Patient onboarding, appointment follow-ups, automated campaigns
+- **Outputs**: TypeScript code using `session.api.journeys`, `session.api.automation_steps`, `session.api.automation_triggers`
+- **Key expertise**: Event-driven workflows, conditional branching, scheduled actions
+- **Collaborates with**: message-template-builder (for branded emails)
+
+#### 📧 **message-template-builder**
+Creates MessageTemplates with modern, mobile-optimized HTML
+- **Use for**: Email templates, SMS templates, multi-channel messaging
+- **Outputs**: TypeScript code using `session.api.templates`
+- **Key expertise**: Responsive HTML, inline CSS, template variables, mobile optimization
+- **Collaborates with**: automation-builder (provides templates for Journey steps)
+
+### Quality Assurance Agent
+
+#### ✅ **script-evaluator**
+Reviews and validates scripts for correctness, best practices, and common issues
+- **Use for**: Reviewing any generated script before finalization
+- **Outputs**: Detailed feedback with categorized issues and suggested fixes
+- **Key expertise**: API usage patterns, composability, error handling, TypeScript quality
+- **When to use**: **ALWAYS** run after builder agents generate code
+
+## Agent Collaboration Patterns
+
+### Pattern 1: Simple Form Creation
+```
+User Request → form-builder → script-evaluator → Final Script
+```
+
+### Pattern 2: Journey with Email Templates
+```
+User Request → automation-builder identifies need for templates
+            ↓
+            message-template-builder creates templates
+            ↓
+            automation-builder references templates in Journey steps
+            ↓
+            script-evaluator reviews complete workflow
+            ↓
+            Final Script
+```
+
+### Pattern 3: Complete Account Setup
+```
+User Request → Multiple builder agents in parallel:
+            ├─ form-builder (intake forms)
+            ├─ automation-builder (workflows)
+            └─ message-template-builder (email templates)
+            ↓
+            Combine outputs into composable scripts
+            ↓
+            script-evaluator reviews each script
+            ↓
+            Final Scripts (individual + composite)
+```
+
+## Workflow with Quality Assurance
+
+### When a user requests account configuration:
+
+1. **Understand the requirements**
+   - What resources need to be created? (Forms, Journeys, Templates, etc.)
+   - Are there dependencies between resources?
+
+2. **Delegate to appropriate builder agents**
+   - Use the `Task` tool to invoke specialized agents
+   - For complex workflows, coordinate multiple agents
+   - Allow agents to collaborate (e.g., automation-builder + message-template-builder)
+
+3. **Review generated code with script-evaluator**
+   - **IMPORTANT**: Always run script-evaluator after builder agents
+   - Provide the generated code for review
+   - Address any critical issues or warnings identified
+
+4. **Create complete standalone scripts**
+   - Start with the standard script structure (dotenv, Session, run function)
+   - Insert agent-generated code (after review/fixes)
+   - Add proper error handling and logging
+   - Include documentation comments
+
+5. **Save to `src/scripts/`**
+   - Use a descriptive filename
+   - Save as TypeScript (`.ts`)
+
+6. **Provide usage instructions**
+   - Show how to build and run the script
 
 ## Script Structure
 
@@ -181,23 +282,60 @@ All scripts require these environment variables (loaded from `.env`):
 - `TELLESCOPE_API_KEY` - API key for authentication (required)
 - `TELLESCOPE_HOST` - API host URL (optional, defaults to https://api.tellescope.com)
 
-## Available Agents
+## Using Agents in Practice
 
-### form-builder
-**Purpose**: Expert at creating Tellescope Forms and FormFields
+### Invoking Builder Agents
 
-**When to use**: User needs to create any type of form (surveys, intake forms, questionnaires, etc.)
+Use the `Task` tool to delegate code generation to specialized agents:
 
-**Usage**:
 ```typescript
+// Example: Form creation
 Task({
   subagent_type: 'general-purpose',
-  description: 'Build [form type] form code',
-  prompt: 'Using the form-builder agent in .claude/agents/form-builder.md, generate TypeScript code to create [detailed requirements]...'
+  description: 'Build PHQ-9 form',
+  prompt: 'Using the form-builder agent in .claude/agents/form-builder.md, generate TypeScript code to create a PHQ-9 depression screening form with all 9 questions plus severity scoring...'
+})
+
+// Example: Journey creation
+Task({
+  subagent_type: 'general-purpose',
+  description: 'Build onboarding journey',
+  prompt: 'Using the automation-builder agent in .claude/agents/automation-builder.md, generate TypeScript code to create a patient onboarding journey that sends a welcome email, then an intake form after 1 hour, then tags the patient when the form is completed...'
+})
+
+// Example: Email template creation
+Task({
+  subagent_type: 'general-purpose',
+  description: 'Build appointment reminder template',
+  prompt: 'Using the message-template-builder agent in .claude/agents/message-template-builder.md, generate TypeScript code to create a mobile-optimized appointment reminder email template with calendar event variables...'
 })
 ```
 
-**Output**: Complete TypeScript code for creating forms with proper field ordering, types, and options
+### Invoking the Evaluator Agent
+
+**CRITICAL**: Always run script-evaluator after builder agents generate code:
+
+```typescript
+Task({
+  subagent_type: 'general-purpose',
+  description: 'Review generated script',
+  prompt: 'Using the script-evaluator agent in .claude/agents/script-evaluator.md, review the following script for correctness, best practices, and common issues:\n\n```typescript\n[INSERT GENERATED SCRIPT HERE]\n```\n\nProvide detailed feedback with categorized issues and suggested fixes.'
+})
+```
+
+**When to review:**
+- ✅ After form-builder generates form creation code
+- ✅ After automation-builder generates journey code
+- ✅ After message-template-builder generates template code
+- ✅ Before combining multiple scripts into a composite script
+- ✅ Before saving any script to `src/scripts/`
+
+**What to do with feedback:**
+1. Read the script-evaluator's categorized issues
+2. Fix all **Critical Issues** (must fix)
+3. Address **Warnings** (should fix)
+4. Consider **Suggestions** (nice to have)
+5. Re-run evaluator if significant changes were made
 
 ## Best Practices
 
@@ -216,11 +354,26 @@ Task({
 **User**: "Create a PHQ-9 depression screening form"
 
 **You**:
-1. Invoke form-builder agent with PHQ-9 requirements
-2. Receive form creation code from agent
-3. Wrap code in standalone script structure
-4. Save to `src/scripts/create-phq9-form.ts`
-5. Respond with confirmation and usage instructions
+1. ✅ Invoke **form-builder** agent with PHQ-9 requirements
+2. ✅ Receive form creation code from agent
+3. ✅ Invoke **script-evaluator** agent to review the generated code
+4. ✅ Apply fixes for any critical issues identified
+5. ✅ Wrap code in standalone script structure
+6. ✅ Save to `src/scripts/create-phq9-form.ts`
+7. ✅ Respond with confirmation and usage instructions
+
+**User**: "Create a patient onboarding journey with welcome emails"
+
+**You**:
+1. ✅ Invoke **automation-builder** agent for journey requirements
+2. ✅ automation-builder identifies need for email templates
+3. ✅ Invoke **message-template-builder** to create welcome email template
+4. ✅ automation-builder creates journey referencing the template
+5. ✅ Invoke **script-evaluator** to review the complete workflow code
+6. ✅ Apply fixes for any issues identified
+7. ✅ Wrap code in standalone script structure
+8. ✅ Save to `src/scripts/create-onboarding-journey.ts`
+9. ✅ Respond with confirmation and usage instructions
 
 ## Script Composition Example
 
@@ -240,11 +393,21 @@ This allows users to:
 
 ## Key Reminders
 
+### Code Generation & Quality
+- **DO**: Use specialized builder agents for code generation (form-builder, automation-builder, message-template-builder)
+- **DO**: **ALWAYS** run script-evaluator after builder agents generate code
+- **DO**: Fix critical issues identified by script-evaluator before saving
+- **DO**: Allow agents to collaborate (automation-builder + message-template-builder)
+
+### Script Structure
 - **DO**: Export a main function that accepts optional Session parameter
 - **DO**: Support both standalone and composed execution with `require.main === module`
 - **DO**: Save all scripts to `src/scripts/`
-- **DO**: Use agents for specialized code generation
 - **DO**: Create composite scripts when multiple features are requested together
+
+### Common Pitfalls
+- **DON'T**: Skip the script-evaluator review step
 - **DON'T**: Create scripts that can't run independently
 - **DON'T**: Initialize sessions in exported functions (accept as parameter instead)
 - **DON'T**: Forget environment variable validation in standalone execution block
+- **DON'T**: Ignore critical issues from script-evaluator
