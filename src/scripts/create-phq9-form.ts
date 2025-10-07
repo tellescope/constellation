@@ -59,6 +59,7 @@ async function run(): Promise<void> {
 
       // Form type
       type: 'enduserFacing',
+      version: 'v2',
     })
 
     // Welcome/Description Field

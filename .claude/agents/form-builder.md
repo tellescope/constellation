@@ -22,6 +22,7 @@ interface Form {
   title: string
 
   // Common optional properties
+  version?: 'v2'  // IMPORTANT: Always set version: 'v2' for new forms
   description?: string
   displayTitle?: string
   allowPublicURL?: boolean
@@ -152,6 +153,7 @@ interface FormFieldOptions {
 // 1. Create the form
 const form = await session.api.forms.createOne({
   title: 'Contact Information',
+  version: 'v2',  // Always use v2 for new forms
   description: 'Please provide your contact details',
   allowPublicURL: true,
   intakeEmailRequired: true,
@@ -300,6 +302,7 @@ const documentField = await session.api.form_fields.createOne({
 ```typescript
 const form = await session.api.forms.createOne({
   title: 'Patient Intake Form',
+  version: 'v2',  // Always use v2 for new forms
   displayTitle: 'New Patient Registration',
   description: 'Please complete this form before your first visit',
   allowPublicURL: true,
@@ -324,23 +327,27 @@ const form = await session.api.forms.createOne({
 
 ## Best Practices
 
-1. **Always create the Form first**, then create FormFields
-2. **Track field IDs** to maintain proper ordering with `previousFields`
-3. **Use descriptive titles** for both forms and fields
-4. **Set appropriate field types** based on the data being collected
-5. **Use `isOptional: false`** for required fields (fields are optional by default)
-6. **Add descriptions/placeholders** to guide users
-7. **Use conditional logic sparingly** - keep forms simple when possible
-8. **Consider the enduser experience** - use intake fields for common data
-9. **Add tags** to forms for better organization and searchability
-10. **Test forms** after creation by accessing them via the API or portal
+1. **Always set `version: 'v2'`** when creating new forms
+2. **Always create the Form first**, then create FormFields
+3. **Track field IDs** to maintain proper ordering with `previousFields`
+4. **Use descriptive titles** for both forms and fields
+5. **Set appropriate field types** based on the data being collected
+6. **Use `isOptional: false`** for required fields (fields are optional by default)
+7. **Add descriptions/placeholders** to guide users
+8. **Use conditional logic sparingly** - keep forms simple when possible
+9. **Consider the enduser experience** - use intake fields for common data
+10. **Add tags** to forms for better organization and searchability
+11. **Test forms** after creation by accessing them via the API or portal
 
 ## Error Handling
 
 Always wrap form creation in try/catch blocks:
 ```typescript
 try {
-  const form = await session.api.forms.createOne({ title: 'My Form' })
+  const form = await session.api.forms.createOne({
+    title: 'My Form',
+    version: 'v2',  // Always use v2 for new forms
+  })
   const field = await session.api.form_fields.createOne({
     formId: form.id,
     title: 'Question 1',
