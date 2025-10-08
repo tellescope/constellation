@@ -159,6 +159,286 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["id"],
       },
     },
+    {
+      name: "automation_triggers_get_page",
+      description: "Get a page of automation triggers from Tellescope with optional filtering and pagination. Returns a list of automation triggers. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for automation triggers (e.g., { status: 'Active' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of automation triggers to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last automation trigger from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "automation_triggers_get_one",
+      description: "Get a single automation trigger by ID from Tellescope. Returns the full automation trigger object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the automation trigger to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "organizations_get_page",
+      description: "Get a page of organizations from Tellescope with optional filtering and pagination. Returns a list of organizations. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for organizations",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of organizations to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last organization from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "organizations_get_one",
+      description: "Get a single organization by ID from Tellescope. Returns the full organization object including custom fields, roles, settings, etc.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the organization to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "users_get_page",
+      description: "Get a page of users from Tellescope with optional filtering and pagination. Returns a list of users. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for users (e.g., { fname: { _exists: true } })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of users to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last user from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "users_get_one",
+      description: "Get a single user by ID from Tellescope. Returns the full user object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the user to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "forms_get_page",
+      description: "Get a page of forms from Tellescope with optional filtering and pagination. Returns a list of forms. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for forms (e.g., { title: 'PHQ-9' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of forms to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last form from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "forms_get_one",
+      description: "Get a single form by ID from Tellescope. Returns the full form object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the form to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "form_fields_get_page",
+      description: "Get a page of form fields from Tellescope with optional filtering and pagination. Returns a list of form fields. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for form fields (e.g., { formId: 'form-id' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of form fields to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last form field from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "form_fields_get_one",
+      description: "Get a single form field by ID from Tellescope. Returns the full form field object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the form field to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "calendar_event_templates_get_page",
+      description: "Get a page of calendar event templates from Tellescope with optional filtering and pagination. Returns a list of appointment types/templates. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for calendar event templates (e.g., { title: 'Initial Consultation' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of calendar event templates to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last calendar event template from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "calendar_event_templates_get_one",
+      description: "Get a single calendar event template by ID from Tellescope. Returns the full appointment type/template object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the calendar event template to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "appointment_locations_get_page",
+      description: "Get a page of appointment locations from Tellescope with optional filtering and pagination. Returns a list of physical and virtual appointment locations. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for appointment locations (e.g., { title: 'Main Office' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of appointment locations to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last appointment location from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "appointment_locations_get_one",
+      description: "Get a single appointment location by ID from Tellescope. Returns the full location object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the appointment location to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "appointment_booking_pages_get_page",
+      description: "Get a page of appointment booking pages from Tellescope with optional filtering and pagination. Returns a list of public booking pages. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for appointment booking pages (e.g., { title: 'Book Appointment' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of appointment booking pages to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last appointment booking page from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "appointment_booking_pages_get_one",
+      description: "Get a single appointment booking page by ID from Tellescope. Returns the full booking page object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the appointment booking page to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
   ],
 }));
 
