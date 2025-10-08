@@ -544,6 +544,41 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["id"],
       },
     },
+    {
+      name: "products_get_page",
+      description: "Get a page of products from Tellescope with optional filtering and pagination. Returns a list of products. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for products (e.g., { name: 'Consultation' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of products to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last product from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "products_get_one",
+      description: "Get a single product by ID from Tellescope. Returns the full product object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the product to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
   ],
 }));
 
