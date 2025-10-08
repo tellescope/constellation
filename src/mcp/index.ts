@@ -439,6 +439,111 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["id"],
       },
     },
+    {
+      name: "databases_get_page",
+      description: "Get a page of databases from Tellescope with optional filtering and pagination. Returns a list of custom databases. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for databases (e.g., { title: 'Patient Registry' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of databases to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last database from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "databases_get_one",
+      description: "Get a single database by ID from Tellescope. Returns the full database object including schema and configuration.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the database to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "database_records_get_page",
+      description: "Get a page of database records from Tellescope with optional filtering and pagination. Returns a list of records from custom databases. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for database records (e.g., { databaseId: 'db-id' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of database records to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last database record from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "database_records_get_one",
+      description: "Get a single database record by ID from Tellescope. Returns the full database record object with all field values.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the database record to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "managed_content_records_get_page",
+      description: "Get a page of managed content records from Tellescope with optional filtering and pagination. Returns a list of managed content records. Use lastId for cursor-based pagination to get the next page of results.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: {
+            type: "object",
+            description: "Filter criteria for managed content records (e.g., { category: 'Articles' })",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of managed content records to return (default: 25)",
+          },
+          lastId: {
+            type: "string",
+            description: "ID of the last item from the previous page. Use this for pagination - pass the 'id' of the last managed content record from the previous result to get the next page.",
+          },
+        },
+      },
+    },
+    {
+      name: "managed_content_records_get_one",
+      description: "Get a single managed content record by ID from Tellescope. Returns the full managed content record object.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            description: "The unique ID of the managed content record to fetch",
+          },
+        },
+        required: ["id"],
+      },
+    },
   ],
 }));
 
