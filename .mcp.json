@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "tellescope": {
+      "command": "npm",
+      "args": ["run", "mcp:dev"],
+      "cwd": "/Users/sebastiancoates/constellation"
+    }
+  }
+}

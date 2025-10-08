@@ -18,7 +18,8 @@
   },
   "include": [
     "examples/**/*",
-    ".claude/**/*"
+    ".claude/**/*",
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
