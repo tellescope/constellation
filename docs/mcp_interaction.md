@@ -10,6 +10,50 @@ You interact directly with Tellescope resources via MCP (Model Context Protocol)
 
 This is different from the SDK's `filter` parameter which uses `_` prefix (e.g., `_exists`, `_in`, `_gt`). When using MCP tools, always use the `$` syntax.
 
+## Using the explain_concept Tool
+
+**CRITICAL**: Before using advanced features like `replaceObjectFields`, `enduserConditions`, `mdbFilter`, or date range filtering, you MUST call the `explain_concept` tool to understand correct usage.
+
+### Why Use This Tool?
+
+1. **Avoid data loss**: `replaceObjectFields` can delete data if used incorrectly
+2. **Understand syntax**: MongoDB operators use `$` prefix, not `_` prefix
+3. **Learn best practices**: Each concept includes examples and common pitfalls
+4. **Context efficiency**: Load detailed documentation only when needed
+
+### Available Concepts
+
+Use `list_concepts` to see all available concepts, then call `explain_concept` with the specific concept name:
+
+```typescript
+// First, list available concepts
+list_concepts()
+
+// Then, get detailed documentation for a specific concept
+explain_concept({ concept: "replaceObjectFields" })
+explain_concept({ concept: "enduserFiltering" })
+explain_concept({ concept: "mdbFilter" })
+explain_concept({ concept: "dateRangeFiltering" })
+```
+
+### When to Call explain_concept
+
+**ALWAYS call BEFORE**:
+- Using `options.replaceObjectFields` in any updateOne call
+- Setting `enduserConditions` or `enduserCondition` in AutomationSteps/Triggers
+- Using `mdbFilter` for complex queries
+- Using `from`/`to` date range parameters
+
+**Pattern**:
+```
+User: "Update the patient's custom field"
+You:
+1. Call explain_concept({ concept: "replaceObjectFields" })
+2. Read and understand the merge vs replace behavior
+3. Fetch existing resource
+4. Perform update with correct options
+```
+
 ## Core Capabilities
 
 ### Reading Resources
@@ -33,6 +77,8 @@ Use MCP tools to modify existing resources:
 - Update journeys: `journeys_update_one`, `automation_steps_update_one`, `automation_triggers_update_one`
 - Update calendar: `calendar_event_templates_update_one`, `appointment_locations_update_one`, `appointment_booking_pages_update_one`
 - Update databases: `databases_update_one`, `database_records_update_one`
+
+**CRITICAL**: All `_update_one` tools support an `options` parameter with `replaceObjectFields` setting. You MUST call `explain_concept({ concept: "replaceObjectFields" })` BEFORE using this parameter to avoid accidental data loss.
 
 ### Exploring Account Configuration
 - Read organization settings: `organizations_get_one`
@@ -176,9 +222,9 @@ You:
 
 Many resources support filtering by enduser (patient) properties using `enduserCondition` or `enduserConditions` fields.
 
-**When you need detailed documentation on this pattern**, use the MCP convention tool:
+**When you need detailed documentation on this pattern**, call the explain_concept tool:
 ```
-Call: get_api_conventions with topic: 'enduser-filtering'
+explain_concept({ concept: "enduserFiltering" })
 ```
 
 This returns comprehensive documentation on:
@@ -186,9 +232,9 @@ This returns comprehensive documentation on:
 - Available operators ($and, $or, $gt, $exists, $in, etc.)
 - Standard enduser fields (tags, fname, email, state, etc.)
 - Custom field references
-- Complete examples
+- Complete examples with best practices
 
-**Quick reference** (for details, call the convention tool):
+**Quick reference** (for details, call explain_concept):
 ```typescript
 // Example: Filter for VIP patients in California
 enduserConditions: {
@@ -235,7 +281,35 @@ toUpdated: '2024-12-31'
 - MCP tools use native MongoDB `$` prefix operators (`$exists`, `$gt`, `$in`), NOT SDK-style `_` prefix operators
 - For date range filtering, use dedicated `from`/`to` parameters instead of `mdbFilter` with `$gt`/`$lt`
 
+## Understanding replaceObjectFields
+
+The `options.replaceObjectFields` parameter controls how updates behave for **object fields** and **arrays**. This is **CRITICAL** to understand to avoid accidental data loss.
+
+**Quick Summary**:
+- **Default (false)**: Merge behavior - adds to existing data (safe)
+- **True**: Replace behavior - complete replacement, deletes unmentioned data (dangerous)
+
+**IMPORTANT**: Before using `replaceObjectFields`, you MUST call:
+```
+explain_concept({ concept: "replaceObjectFields" })
+```
+
+This will provide:
+- Detailed merge vs. replace behavior explanation
+- When to use each option
+- Critical warnings about object subfield updates
+- Real-world examples and decision tree
+- Common pitfalls to avoid
+
+**Never** use `replaceObjectFields: true` without first reading the complete documentation via `explain_concept`.
+
 ## Tool Organization
+
+### Documentation Tools
+- `list_concepts` - List all available API concepts with brief descriptions
+- `explain_concept` - Get detailed documentation for a specific concept (replaceObjectFields, enduserFiltering, mdbFilter, dateRangeFiltering)
+
+**CRITICAL**: Always call these tools BEFORE using advanced features to avoid errors and data loss.
 
 ### Resource Read Tools (Get One)
 - `templates_get_one` - Fetch single template by ID
@@ -296,9 +370,6 @@ toUpdated: '2024-12-31'
 - `appointment_booking_pages_update_one` - Update existing booking page
 - `databases_update_one` - Update existing database
 - `database_records_update_one` - Update existing database record
-
-### Convention Documentation Tool
-- `get_api_conventions` - Fetch documentation on reusable API patterns
 
 ## Key Principles
 
@@ -445,7 +516,7 @@ You:
 
 ### Conditional Logic in Forms
 When creating form fields with conditional display, you may need to reference the enduser filtering pattern:
-1. Call `get_api_conventions` with topic `'enduser-filtering'` for full documentation
+1. Call `explain_concept({ concept: 'enduserFiltering' })` for full documentation
 2. Use `compoundLogic` previousField type
 3. Set condition using MongoDB-style queries
 

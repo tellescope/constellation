@@ -71,17 +71,26 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
-      name: "get_api_conventions",
-      description: "Get documentation about reusable API patterns used across multiple resource types (e.g., enduserCondition filtering in AutomationSteps/AutomationTriggers, MongoDB query operators, custom field naming). Use this for cross-cutting patterns that apply to many resources, not resource-specific documentation.",
+      name: "explain_concept",
+      description: "Get detailed documentation for a specific Tellescope API concept. IMPORTANT: Call this tool BEFORE using features like replaceObjectFields, enduserConditions, mdbFilter, or date range filtering to understand correct usage and avoid data loss.",
       inputSchema: {
         type: "object",
         properties: {
-          topic: {
+          concept: {
             type: "string",
-            enum: ["enduser-filtering", "all"],
-            description: "Specific convention topic: 'enduser-filtering' for AutomationStep/Trigger enduserCondition patterns, or 'all' for complete conventions",
+            enum: ["replaceObjectFields", "enduserFiltering", "mdbFilter", "dateRangeFiltering"],
+            description: "The concept to explain:\n- 'replaceObjectFields': Update behavior for objects/arrays (merge vs replace) - CRITICAL to avoid data loss\n- 'enduserFiltering': Filter automations by patient properties (enduserCondition/enduserConditions)\n- 'mdbFilter': MongoDB query syntax for filtering resources in get_page calls\n- 'dateRangeFiltering': Using from/to parameters for date range queries",
           },
         },
+        required: ["concept"],
+      },
+    },
+    {
+      name: "list_concepts",
+      description: "List all available API concepts with brief descriptions. Use this to discover what concepts are available, then call explain_concept for detailed documentation.",
+      inputSchema: {
+        type: "object",
+        properties: {},
       },
     },
     {
@@ -730,22 +739,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     const toolName = request.params.name;
 
-    // Handle special documentation tool
-    if (toolName === "get_api_conventions") {
-      const fs = await import("fs/promises");
-      const path = await import("path");
-
-      const conventionsPath = path.join(__dirname, "../../docs/mcp-conventions.md");
-      const content = await fs.readFile(conventionsPath, "utf-8");
-
+    // Handle special documentation tools
+    if (toolName === "list_concepts") {
       return {
         content: [
           {
             type: "text",
-            text: content,
+            text: `# Available Tellescope API Concepts
+
+## replaceObjectFields
+**Critical**: Controls merge vs. replace behavior when updating objects and arrays. MUST understand before using updateOne methods to avoid accidental data loss.
+
+## enduserFiltering
+Filter automation actions based on patient (enduser) properties. Used in AutomationStep enduserConditions and AutomationTrigger enduserCondition fields.
+
+## mdbFilter
+MongoDB-style query syntax for filtering resources in get_page calls. Uses native MongoDB operators with $ prefix ($exists, $in, $gt, etc.).
+
+## dateRangeFiltering
+Using dedicated from/to parameters for date range queries instead of mdbFilter with comparison operators. More efficient and cleaner syntax.
+
+---
+
+Call explain_concept with the concept name to get detailed documentation with examples.`,
           },
         ],
       };
+    }
+
+    if (toolName === "explain_concept") {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+
+      const args = request.params.arguments as { concept: string };
+      const conceptName = args.concept;
+
+      // Map concept names to file names
+      const conceptPath = path.join(__dirname, `../../docs/concepts/${conceptName}.md`);
+
+      try {
+        const content = await fs.readFile(conceptPath, "utf-8");
+        return {
+          content: [
+            {
+              type: "text",
+              text: content,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: Concept '${conceptName}' not found. Use list_concepts to see available concepts.`,
+            },
+          ],
+          isError: true,
+        };
+      }
     }
 
     // Parse tool name: {model}_{operation}_{one|page}
