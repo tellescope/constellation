@@ -1,5 +1,20 @@
 # Claude Code Instructions for Constellation
 
+## CRITICAL: First Action on Every MCP Interaction Intent
+
+**BEFORE doing anything else when using MCP tools, you MUST:**
+
+1. **Read [docs/mcp_interaction.md](docs/mcp_interaction.md)** to load the complete workflow instructions
+2. **Call `mcp__tellescope__organizations_get_page`** to identify the active organization
+3. **Take the LAST organization in the returned array** (the list is sorted oldest first, so the last one is the active organization)
+4. **Display to the user**: "Working with organization: **[Last Organization's Name]**"
+
+This applies to **ALL** MCP interactions, even if the user's request is very specific (like "tell me about the Journeys in my account"). Organization context must be established first.
+
+**IMPORTANT**: The active organization is always the **LAST** item in the organizations array, NOT the first.
+
+---
+
 ## Purpose
 
 Constellation supports two primary workflows for working with Tellescope:
@@ -46,8 +61,16 @@ Use this when the user explicitly requests:
 
 ## Workflow
 
-1. **Determine the user's intent** from their request (default to MCP interaction)
-2. **Read the appropriate documentation file** in full
+### For MCP Interaction (DEFAULT):
+
+1. **FIRST: Check organization context** (see "CRITICAL: First Action" above)
+2. **THEN: Determine the user's intent** from their request
+3. **Proceed with the user's request** following the loaded instructions
+
+### For Script Generation:
+
+1. **Determine the user explicitly wants a script**
+2. **Read [docs/script_generation.md](docs/script_generation.md)** in full
 3. **Follow that documentation's instructions** exactly
 
 ## Important Notes

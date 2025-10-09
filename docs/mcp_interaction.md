@@ -4,15 +4,21 @@
 
 You interact directly with Tellescope resources via MCP (Model Context Protocol) tools. You can create, read, update, and explore resources in the user's Tellescope account in real-time.
 
-## Session Initialization
+## ⚠️ MANDATORY Session Initialization
 
-**CRITICAL**: At the start of every MCP interaction session, you MUST check which organization/account the user is working with:
+**YOU MUST DO THIS FIRST - NO EXCEPTIONS**
 
-1. **Call `organizations_get_page` without parameters** (it will return the user's accessible organizations)
-2. **Take the LAST organization in the returned list** - this is the active organization for the current API key
+At the start of EVERY new MCP session - regardless of how specific or urgent the user's request seems - you MUST complete this initialization sequence:
+
+1. **Call `organizations_get_page` without parameters** (it will return the user's accessible organizations, sorted oldest first)
+2. **Take the LAST organization in the returned array** - this is the active organization for the current API key
+   - ⚠️ **NOT the first - the LAST one in the array**
+   - The array is sorted oldest first, so `organizations[organizations.length - 1]` is the active one
 3. **Display the organization name to the user** in a friendly format:
-   - "Working with organization: **[Organization Name]**"
-   - If multiple organizations are returned, show: "You have access to X organizations. Active: **[Organization Name]**"
+   - "Working with organization: **[LAST Organization's Name]**"
+   - If multiple organizations are returned, show: "You have access to X organizations. Active: **[LAST Organization's Name]**"
+
+**Then and only then** proceed to fulfill the user's request.
 
 ### Why This Matters
 
@@ -20,6 +26,32 @@ You interact directly with Tellescope resources via MCP (Model Context Protocol)
 - The active organization determines which resources you'll be working with
 - Showing this upfront prevents confusion and mistakes
 - It confirms the API key is configured correctly
+
+### Examples of Correct Behavior
+
+❌ **WRONG** - Jumping straight to the request:
+```
+User: "Tell me about the Journeys in my account"
+Claude: [calls journeys_get_page immediately]
+```
+
+✅ **CORRECT** - Initialize first with LAST organization:
+```
+User: "Tell me about the Journeys in my account"
+Claude: [calls organizations_get_page, receives array of 3 orgs]
+Claude: [takes the LAST organization in the array - index 2]
+Claude: "Working with organization: **Acme Healthcare**"
+Claude: [calls journeys_get_page]
+Claude: "You have 3 active journeys: ..."
+```
+
+This applies even when:
+- The user's request is very specific or urgent
+- The request seems simple
+- You think you know what to do
+- The user appears impatient
+
+**Organization context is non-negotiable.**
 
 ### Recommended Allowlist Pattern
 
