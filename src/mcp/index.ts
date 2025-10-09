@@ -40,9 +40,14 @@ const session = new Session({
 
 // Define shared input schemas for read operations
 const getSomeSchema = z.object({
-  filter: z.record(z.any()).optional().describe("Filter criteria"),
-  limit: z.number().optional().describe("Maximum number of items to return"),
+  mdbFilter: z.record(z.any()).optional().describe("MongoDB-style filter query with native MongoDB operators ($exists, $gt, $in, $and, $or, etc.). Example: { tags: 'vip', state: 'CA' }"),
+  limit: z.number().optional().describe("Maximum number of items to return (default: 25)"),
   lastId: z.string().optional().describe("ID of the last item from previous page for cursor-based pagination"),
+  from: z.union([z.string(), z.number()]).optional().describe("Start date/time for createdAt range filter (ISO string or Unix timestamp)"),
+  to: z.string().optional().describe("End date/time for createdAt range filter (ISO string)"),
+  fromToField: z.string().optional().describe("Field name to use for from/to range filter (default: 'createdAt')"),
+  fromUpdated: z.string().optional().describe("Start date/time for updatedAt range filter (ISO string)"),
+  toUpdated: z.string().optional().describe("End date/time for updatedAt range filter (ISO string)"),
 });
 
 const getOneSchema = z.object({
@@ -85,9 +90,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for templates (e.g., { type: 'email' })",
+            description: "MongoDB-style filter query with native MongoDB operators ($exists, $in, $gt, etc.). Example: { type: 'enduser' }, { tags: { $in: ['onboarding'] } })",
           },
           limit: {
             type: "number",
@@ -120,9 +125,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for journeys (e.g., { title: 'Onboarding' })",
+            description: "MongoDB-style filter query for journeys (e.g., { title: 'Onboarding' })",
           },
           limit: {
             type: "number",
@@ -155,9 +160,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for automation steps (e.g., { journeyId: 'journey-id' })",
+            description: "MongoDB-style filter query for automation steps (e.g., { journeyId: 'journey-id' })",
           },
           limit: {
             type: "number",
@@ -190,9 +195,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for automation triggers (e.g., { status: 'Active' })",
+            description: "MongoDB-style filter query for automation triggers (e.g., { status: 'Active' })",
           },
           limit: {
             type: "number",
@@ -225,9 +230,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for organizations",
+            description: "MongoDB-style filter query for organizations",
           },
           limit: {
             type: "number",
@@ -260,9 +265,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for users (e.g., { fname: { _exists: true } })",
+            description: "MongoDB-style filter query for users (e.g., { fname: { _exists: true } })",
           },
           limit: {
             type: "number",
@@ -295,9 +300,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for forms (e.g., { title: 'PHQ-9' })",
+            description: "MongoDB-style filter query for forms (e.g., { title: 'PHQ-9' })",
           },
           limit: {
             type: "number",
@@ -330,9 +335,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for form fields (e.g., { formId: 'form-id' })",
+            description: "MongoDB-style filter query for form fields (e.g., { formId: 'form-id' })",
           },
           limit: {
             type: "number",
@@ -375,9 +380,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for calendar event templates (e.g., { title: 'Initial Consultation' })",
+            description: "MongoDB-style filter query for calendar event templates (e.g., { title: 'Initial Consultation' })",
           },
           limit: {
             type: "number",
@@ -410,9 +415,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for appointment locations (e.g., { title: 'Main Office' })",
+            description: "MongoDB-style filter query for appointment locations (e.g., { title: 'Main Office' })",
           },
           limit: {
             type: "number",
@@ -445,9 +450,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for appointment booking pages (e.g., { title: 'Book Appointment' })",
+            description: "MongoDB-style filter query for appointment booking pages (e.g., { title: 'Book Appointment' })",
           },
           limit: {
             type: "number",
@@ -480,9 +485,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for databases (e.g., { title: 'Patient Registry' })",
+            description: "MongoDB-style filter query for databases (e.g., { title: 'Patient Registry' })",
           },
           limit: {
             type: "number",
@@ -515,9 +520,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for database records (e.g., { databaseId: 'db-id' })",
+            description: "MongoDB-style filter query for database records (e.g., { databaseId: 'db-id' })",
           },
           limit: {
             type: "number",
@@ -550,9 +555,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for managed content records (e.g., { category: 'Articles' })",
+            description: "MongoDB-style filter query for managed content records (e.g., { category: 'Articles' })",
           },
           limit: {
             type: "number",
@@ -585,9 +590,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          filter: {
+          mdbFilter: {
             type: "object",
-            description: "Filter criteria for products (e.g., { name: 'Consultation' })",
+            description: "MongoDB-style filter query for products (e.g., { name: 'Consultation' })",
           },
           limit: {
             type: "number",
@@ -625,9 +630,14 @@ async function handleGetSome(modelName: string, args: any) {
   }
 
   const results = await model.getSome({
-    filter: args.filter,
+    mdbFilter: args.mdbFilter,
     limit: args.limit,
     lastId: args.lastId,
+    from: args.from,
+    to: args.to,
+    fromToField: args.fromToField,
+    fromUpdated: args.fromUpdated,
+    toUpdated: args.toUpdated,
   });
 
   return {

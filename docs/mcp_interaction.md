@@ -4,13 +4,19 @@
 
 You interact directly with Tellescope resources via MCP (Model Context Protocol) tools. You can create, read, update, and explore resources in the user's Tellescope account in real-time.
 
+## Important: MCP Filter Syntax
+
+**MCP tools use native MongoDB operators with `$` prefix** (e.g., `$exists`, `$in`, `$gt`).
+
+This is different from the SDK's `filter` parameter which uses `_` prefix (e.g., `_exists`, `_in`, `_gt`). When using MCP tools, always use the `$` syntax.
+
 ## Core Capabilities
 
 ### Reading Resources
 Use MCP tools to fetch and explore existing configuration:
 - Get single resources by ID: `templates_get_one`, `forms_get_one`, `journeys_get_one`, etc.
 - Get paginated lists: `templates_get_page`, `forms_get_page`, `automation_steps_get_page`, etc.
-- Filter and search: Use `filter` parameters with MongoDB-style queries
+- Filter and search: Use `mdbFilter` parameters with MongoDB-style queries
 
 ### Creating Resources
 Use MCP tools to create new resources directly:
@@ -42,7 +48,7 @@ Always fetch existing resources to understand current state before making change
 ```
 User: "Update the welcome email"
 You:
-1. Call templates_get_page with filter { title: 'welcome' }
+1. Call templates_get_page with mdbFilter: { title: 'welcome' }
 2. Review existing template
 3. Ask user what to change
 4. Call templates_update_one with changes
@@ -60,13 +66,13 @@ BookingPage → CalendarEventTemplates → AppointmentLocations
 Use MongoDB-style filters to narrow results:
 ```typescript
 // Find active journeys with specific tag
-filter: { tags: 'onboarding', archivedAt: { _exists: false } }
+mdbFilter: { tags: 'onboarding', archivedAt: { $exists: false } }
 
 // Find forms by type
-filter: { type: 'enduserFacing' }
+mdbFilter: { type: 'enduserFacing' }
 
 // Find templates for email channel
-filter: { forChannels: 'Email' }
+mdbFilter: { forChannels: 'Email' }
 ```
 
 ### 4. Handle Pagination
@@ -77,7 +83,30 @@ When listing resources, use `lastId` for pagination:
 3. Call get_page again with lastId
 ```
 
-### 5. Validate Before Creating
+### 5. Use Date Range Parameters for Time Filtering
+For filtering by creation or update time, use dedicated parameters:
+```typescript
+// Get forms created in January 2024
+forms_get_page({
+  from: '2024-01-01',
+  to: '2024-01-31T23:59:59Z'
+})
+
+// Get templates updated in the last 7 days
+templates_get_page({
+  fromUpdated: '2024-01-15',
+  toUpdated: '2024-01-22'
+})
+
+// Get appointments by appointment date
+calendar_events_get_page({
+  from: '2024-02-01',
+  to: '2024-02-29',
+  fromToField: 'startTime'
+})
+```
+
+### 6. Validate Before Creating
 Check for existing resources to avoid duplicates:
 ```
 1. Search for existing resource by title/name
@@ -100,9 +129,9 @@ You:
 ```
 User: "Add a field to my intake form"
 You:
-1. Call forms_get_page with filter for "intake"
+1. Call forms_get_page with mdbFilter: { title: { $regex: 'intake' } }
 2. Present matching forms, confirm which one
-3. Call form_fields_get_page with filter: { formId: 'selected-form-id' }
+3. Call form_fields_get_page with mdbFilter: { formId: 'selected-form-id' }
 4. Show existing fields
 5. Ask what field to add
 6. Call form_fields_create_one with new field
@@ -123,8 +152,8 @@ You:
 ```
 User: "Show me how my onboarding journey works"
 You:
-1. Call journeys_get_page with filter for "onboarding"
-2. Call automation_steps_get_page with filter: { journeyId: 'journey-id' }
+1. Call journeys_get_page with mdbFilter: { title: { $regex: 'onboarding' } }
+2. Call automation_steps_get_page with mdbFilter: { journeyId: 'journey-id' }
 3. For each step, fetch referenced resources:
    - If sendEmail action: fetch template
    - If sendForm action: fetch form
@@ -172,26 +201,39 @@ enduserConditions: {
 
 ### Filter Query Pattern
 
-When using `get_page` methods, you can filter results with MongoDB-style queries:
+When using `get_page` methods, you can filter results with MongoDB-style queries and date range parameters:
 
 ```typescript
 // Existence check
-filter: { fname: { _exists: true } }
-
-// Comparison
-filter: { createdAt: { _gt: '2024-01-01' } }
+mdbFilter: { fname: { $exists: true } }
 
 // Array membership
-filter: { tags: { _in: ['vip', 'premium'] } }
+mdbFilter: { tags: { $in: ['vip', 'premium'] } }
 
 // Multiple conditions (implicit AND)
-filter: {
+mdbFilter: {
   type: 'enduserFacing',
-  archivedAt: { _exists: false }
+  archivedAt: { $exists: false }
 }
+
+// Date range filtering (use from/to parameters, NOT mdbFilter)
+from: '2024-01-01T00:00:00Z',
+to: '2024-12-31T23:59:59Z'
+// By default filters by createdAt
+
+// Date range on different field
+from: '2024-01-01',
+to: '2024-12-31',
+fromToField: 'appointmentDate'
+
+// Filter by updatedAt instead
+fromUpdated: '2024-01-01',
+toUpdated: '2024-12-31'
 ```
 
-**Important**: Use `_` prefix for operators (`_exists`, `_gt`, `_in`), not `$` prefix.
+**Important**:
+- MCP tools use native MongoDB `$` prefix operators (`$exists`, `$gt`, `$in`), NOT SDK-style `_` prefix operators
+- For date range filtering, use dedicated `from`/`to` parameters instead of `mdbFilter` with `$gt`/`$lt`
 
 ## Tool Organization
 
@@ -316,7 +358,7 @@ Always fetch to confirm a resource exists before referencing it.
 Creating a journey step that references a template that doesn't exist will fail.
 
 ### ❌ Using Wrong Filter Syntax
-Use `_exists` not `$exists`. Use `_in` not `$in`.
+Use `$exists` not `$exists`. Use `$in` not `$in`.
 
 ### ❌ Forgetting Pagination
 Large accounts may have hundreds of resources - use pagination to see all.
@@ -348,7 +390,7 @@ You:
 User: "Change the welcome email subject to 'Welcome to Our Practice'"
 
 You:
-1. Call templates_get_page with filter: { title: { _regex: 'welcome' } } (or similar)
+1. Call templates_get_page with mdbFilter: { title: { $regex: 'welcome' } } (or similar)
 2. Find matching template
 3. Call templates_update_one with id and updates: { subject: 'Welcome to Our Practice' }
 4. Response: "Updated the 'Welcome Email' template subject line."
@@ -372,8 +414,8 @@ You:
 User: "Show me how the onboarding journey works"
 
 You:
-1. Call journeys_get_page with filter: { title: { _regex: 'onboarding' } }
-2. Call automation_steps_get_page with filter: { journeyId: 'journey-id' }
+1. Call journeys_get_page with mdbFilter: { title: { $regex: 'onboarding' } }
+2. Call automation_steps_get_page with mdbFilter: { journeyId: 'journey-id' }
 3. For each step:
    - If sendEmail: call templates_get_one
    - If sendForm: call forms_get_one
@@ -390,10 +432,10 @@ You:
 User: "Add a phone number field to the intake form"
 
 You:
-1. Call forms_get_page with filter: { title: { _regex: 'intake' } }
+1. Call forms_get_page with mdbFilter: { title: { $regex: 'intake' } }
 2. Confirm: "I found 'Patient Intake Form'. Is this the one?"
 3. User confirms
-4. Call form_fields_get_page with filter: { formId: 'form-id' }
+4. Call form_fields_get_page with mdbFilter: { formId: 'form-id' }
 5. Find last field in sequence
 6. Call form_fields_create_one with type: 'phone', previousFields: [{ type: 'after', info: { fieldId: 'last-field-id' } }]
 7. Response: "Added phone field after the email field."
@@ -424,16 +466,18 @@ When setting up appointment booking:
 
 ## Quick Reference
 
-### MongoDB Query Operators (with _ prefix)
-- `_exists: true/false` - Field exists
-- `_gt: value` - Greater than
-- `_gte: value` - Greater than or equal
-- `_lt: value` - Less than
-- `_lte: value` - Less than or equal
-- `_eq: value` - Equals (usually omit, just use `field: value`)
-- `_ne: value` - Not equals
-- `_in: [values]` - In array
-- `_nin: [values]` - Not in array
+### MongoDB Query Operators (mdbFilter uses $ prefix)
+- `$exists: true/false` - Field exists
+- `$gt: value` - Greater than
+- `$gte: value` - Greater than or equal
+- `$lt: value` - Less than
+- `$lte: value` - Less than or equal
+- `$eq: value` - Equals (usually omit, just use `field: value`)
+- `$ne: value` - Not equals
+- `$in: [values]` - In array
+- `$nin: [values]` - Not in array
+
+**Remember**: MCP `mdbFilter` uses `$` prefix (MongoDB native), NOT `_` prefix (SDK-style).
 
 ### Common Field Names
 **Enduser (patient) standard fields:**
