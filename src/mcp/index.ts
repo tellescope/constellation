@@ -13,8 +13,13 @@ import { z } from "zod";
 import express from "express";
 import { createCreateOneSchema, createUpdateOneSchema } from "./types/_utilities";
 import { formFieldSchemas, formFieldTools } from "./types/form_fields";
+import { formSchemas, formTools } from "./types/forms";
 import { journeySchemas, journeyTools } from "./types/journeys";
 import { automationStepSchemas, automationStepTools } from "./types/automation_steps";
+import { messageTemplateSchemas, messageTemplateTools } from "./types/templates";
+import { calendarEventTemplateSchemas, calendarEventTemplateTools } from "./types/calendar_event_templates";
+import { appointmentLocationSchemas, appointmentLocationTools } from "./types/appointment_locations";
+import { appointmentBookingPageSchemas, appointmentBookingPageTools } from "./types/appointment_booking_pages";
 
 // Load environment variables
 dotenv.config();
@@ -353,8 +358,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     ...formFieldTools,
+    ...formTools,
     ...journeyTools,
     ...automationStepTools,
+    ...messageTemplateTools,
+    ...calendarEventTemplateTools,
+    ...appointmentLocationTools,
+    ...appointmentBookingPageTools,
     {
       name: "calendar_event_templates_get_page",
       description: "Get a page of calendar event templates from Tellescope with optional filtering and pagination. Returns a list of appointment types/templates. Use lastId for cursor-based pagination to get the next page of results.",
@@ -689,8 +699,13 @@ const modelSchemas: Record<string, {
   update?: z.ZodType<any>;
 }> = {
   form_fields: formFieldSchemas,
+  forms: formSchemas,
   journeys: journeySchemas,
   automation_steps: automationStepSchemas,
+  templates: messageTemplateSchemas,
+  calendar_event_templates: calendarEventTemplateSchemas,
+  appointment_locations: appointmentLocationSchemas,
+  appointment_booking_pages: appointmentBookingPageSchemas,
   // Add more models here as they're implemented
 };
 
