@@ -13,8 +13,8 @@
 1. **Model Type Name** (e.g., `templates`, `journeys`, `automation_steps`)
    - What is the exact model name as it appears in the SDK? (e.g., `session.api.templates`)
 
-2. **Reference Type Path** (e.g., `/Users/sebastiancoates/tellescope/packages/public/types-models/src/index.ts`)
-   - What is the full path to the TypeScript file containing the type definition?
+2. **Reference Type Path** (e.g., `/Users/sebastiancoates/tellescope`)
+   - What is a path to a project which includes the type definition?
 
 3. **Type Interface Name** (e.g., `MessageTemplate`, `Journey`, `AutomationStep`)
    - What is the exact TypeScript interface name for this type?
