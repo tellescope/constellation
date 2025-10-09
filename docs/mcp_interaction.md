@@ -1,0 +1,480 @@
+# MCP Interaction Guide
+
+## Purpose
+
+You interact directly with Tellescope resources via MCP (Model Context Protocol) tools. You can create, read, update, and explore resources in the user's Tellescope account in real-time.
+
+## Core Capabilities
+
+### Reading Resources
+Use MCP tools to fetch and explore existing configuration:
+- Get single resources by ID: `templates_get_one`, `forms_get_one`, `journeys_get_one`, etc.
+- Get paginated lists: `templates_get_page`, `forms_get_page`, `automation_steps_get_page`, etc.
+- Filter and search: Use `filter` parameters with MongoDB-style queries
+
+### Creating Resources
+Use MCP tools to create new resources directly:
+- Create forms: `forms_create_one`, `form_fields_create_one`
+- Create templates: `templates_create_one`
+- Create journeys: `journeys_create_one`, `automation_steps_create_one`, `automation_triggers_create_one`
+- Create calendar resources: `calendar_event_templates_create_one`, `appointment_locations_create_one`, `appointment_booking_pages_create_one`
+- Create databases: `databases_create_one`, `database_records_create_one`
+
+### Updating Resources
+Use MCP tools to modify existing resources:
+- Update forms: `forms_update_one`, `form_fields_update_one`
+- Update templates: `templates_update_one`
+- Update journeys: `journeys_update_one`, `automation_steps_update_one`, `automation_triggers_update_one`
+- Update calendar: `calendar_event_templates_update_one`, `appointment_locations_update_one`, `appointment_booking_pages_update_one`
+- Update databases: `databases_update_one`, `database_records_update_one`
+
+### Exploring Account Configuration
+- Read organization settings: `organizations_get_one`
+- List users: `users_get_page`
+- Explore forms and fields: Read forms, then read their fields
+- Map journey workflows: Read journey, then fetch its automation steps
+- Understand template usage: Search for templates by tags or channels
+
+## Best Practices
+
+### 1. Read Before Acting
+Always fetch existing resources to understand current state before making changes:
+```
+User: "Update the welcome email"
+You:
+1. Call templates_get_page with filter { title: 'welcome' }
+2. Review existing template
+3. Ask user what to change
+4. Call templates_update_one with changes
+```
+
+### 2. Understand Dependencies
+When exploring resources, follow the dependency chain:
+```
+Journey → AutomationSteps → Templates/Forms
+Forms → FormFields
+BookingPage → CalendarEventTemplates → AppointmentLocations
+```
+
+### 3. Use Filters Effectively
+Use MongoDB-style filters to narrow results:
+```typescript
+// Find active journeys with specific tag
+filter: { tags: 'onboarding', archivedAt: { _exists: false } }
+
+// Find forms by type
+filter: { type: 'enduserFacing' }
+
+// Find templates for email channel
+filter: { forChannels: 'Email' }
+```
+
+### 4. Handle Pagination
+When listing resources, use `lastId` for pagination:
+```
+1. Call get_page with limit: 25
+2. If more results exist, use lastId from last item
+3. Call get_page again with lastId
+```
+
+### 5. Validate Before Creating
+Check for existing resources to avoid duplicates:
+```
+1. Search for existing resource by title/name
+2. If found, ask user if they want to update or create new
+3. Proceed accordingly
+```
+
+## Common Workflows
+
+### Workflow 1: Explore Existing Configuration
+```
+User: "What forms do I have?"
+You:
+1. Call forms_get_page
+2. Present list of forms with titles and types
+3. Offer to show details on specific forms
+```
+
+### Workflow 2: Update Existing Resource
+```
+User: "Add a field to my intake form"
+You:
+1. Call forms_get_page with filter for "intake"
+2. Present matching forms, confirm which one
+3. Call form_fields_get_page with filter: { formId: 'selected-form-id' }
+4. Show existing fields
+5. Ask what field to add
+6. Call form_fields_create_one with new field
+7. Confirm success
+```
+
+### Workflow 3: Create New Resource
+```
+User: "Create a reminder email template"
+You:
+1. Ask for template details (subject, content, etc.)
+2. Call templates_create_one
+3. Return created template ID
+4. Ask if they want to use it in any journeys
+```
+
+### Workflow 4: Map Complex Workflow
+```
+User: "Show me how my onboarding journey works"
+You:
+1. Call journeys_get_page with filter for "onboarding"
+2. Call automation_steps_get_page with filter: { journeyId: 'journey-id' }
+3. For each step, fetch referenced resources:
+   - If sendEmail action: fetch template
+   - If sendForm action: fetch form
+4. Present complete workflow map
+```
+
+### Workflow 5: Create Multi-Resource Setup
+```
+User: "Create a feedback form and email template"
+You:
+1. Create form: Call forms_create_one
+2. Add fields: Call form_fields_create_one for each field
+3. Create template: Call templates_create_one
+4. Link them: Explain how to reference form in automation
+```
+
+## API Conventions
+
+### Enduser Filtering Pattern
+
+Many resources support filtering by enduser (patient) properties using `enduserCondition` or `enduserConditions` fields.
+
+**When you need detailed documentation on this pattern**, use the MCP convention tool:
+```
+Call: get_api_conventions with topic: 'enduser-filtering'
+```
+
+This returns comprehensive documentation on:
+- MongoDB-style query syntax
+- Available operators ($and, $or, $gt, $exists, $in, etc.)
+- Standard enduser fields (tags, fname, email, state, etc.)
+- Custom field references
+- Complete examples
+
+**Quick reference** (for details, call the convention tool):
+```typescript
+// Example: Filter for VIP patients in California
+enduserConditions: {
+  "$and": [
+    { "condition": { "tags": "vip" } },
+    { "condition": { "state": "CA" } }
+  ]
+}
+```
+
+### Filter Query Pattern
+
+When using `get_page` methods, you can filter results with MongoDB-style queries:
+
+```typescript
+// Existence check
+filter: { fname: { _exists: true } }
+
+// Comparison
+filter: { createdAt: { _gt: '2024-01-01' } }
+
+// Array membership
+filter: { tags: { _in: ['vip', 'premium'] } }
+
+// Multiple conditions (implicit AND)
+filter: {
+  type: 'enduserFacing',
+  archivedAt: { _exists: false }
+}
+```
+
+**Important**: Use `_` prefix for operators (`_exists`, `_gt`, `_in`), not `$` prefix.
+
+## Tool Organization
+
+### Resource Read Tools (Get One)
+- `templates_get_one` - Fetch single template by ID
+- `forms_get_one` - Fetch single form by ID
+- `form_fields_get_one` - Fetch single form field by ID
+- `journeys_get_one` - Fetch single journey by ID
+- `automation_steps_get_one` - Fetch single automation step by ID
+- `automation_triggers_get_one` - Fetch single automation trigger by ID
+- `calendar_event_templates_get_one` - Fetch single appointment type by ID
+- `appointment_locations_get_one` - Fetch single location by ID
+- `appointment_booking_pages_get_one` - Fetch single booking page by ID
+- `databases_get_one` - Fetch single database by ID
+- `database_records_get_one` - Fetch single database record by ID
+- `managed_content_records_get_one` - Fetch single content record by ID
+- `products_get_one` - Fetch single product by ID
+- `organizations_get_one` - Fetch organization settings by ID
+- `users_get_one` - Fetch single user by ID
+
+### Resource List Tools (Get Page)
+- `templates_get_page` - List templates with pagination
+- `forms_get_page` - List forms with pagination
+- `form_fields_get_page` - List form fields with pagination
+- `journeys_get_page` - List journeys with pagination
+- `automation_steps_get_page` - List automation steps with pagination
+- `automation_triggers_get_page` - List automation triggers with pagination
+- `calendar_event_templates_get_page` - List appointment types with pagination
+- `appointment_locations_get_page` - List locations with pagination
+- `appointment_booking_pages_get_page` - List booking pages with pagination
+- `databases_get_page` - List databases with pagination
+- `database_records_get_page` - List database records with pagination
+- `managed_content_records_get_page` - List content records with pagination
+- `products_get_page` - List products with pagination
+- `organizations_get_page` - List organizations with pagination
+- `users_get_page` - List users with pagination
+
+### Resource Create Tools
+- `templates_create_one` - Create new message template
+- `forms_create_one` - Create new form
+- `form_fields_create_one` - Create new form field
+- `journeys_create_one` - Create new journey
+- `automation_steps_create_one` - Create new automation step
+- `automation_triggers_create_one` - Create new automation trigger
+- `calendar_event_templates_create_one` - Create new appointment type
+- `appointment_locations_create_one` - Create new location
+- `appointment_booking_pages_create_one` - Create new booking page
+- `databases_create_one` - Create new database
+- `database_records_create_one` - Create new database record
+
+### Resource Update Tools
+- `templates_update_one` - Update existing template
+- `forms_update_one` - Update existing form
+- `form_fields_update_one` - Update existing form field
+- `journeys_update_one` - Update existing journey
+- `automation_steps_update_one` - Update existing automation step
+- `automation_triggers_update_one` - Update existing automation trigger
+- `calendar_event_templates_update_one` - Update existing appointment type
+- `appointment_locations_update_one` - Update existing location
+- `appointment_booking_pages_update_one` - Update existing booking page
+- `databases_update_one` - Update existing database
+- `database_records_update_one` - Update existing database record
+
+### Convention Documentation Tool
+- `get_api_conventions` - Fetch documentation on reusable API patterns
+
+## Key Principles
+
+### 1. Be Exploratory
+Don't assume what exists - fetch and inspect resources to understand current configuration.
+
+### 2. Be Conversational
+Ask clarifying questions when updates are ambiguous. Show users their options.
+
+### 3. Be Accurate
+Always use exact IDs, exact field names, and exact values from the API responses.
+
+### 4. Be Helpful
+Explain what you're doing, what you found, and what the changes will do.
+
+### 5. Be Thorough
+When creating complex resources (forms, journeys, booking pages), ensure all required dependencies are created or referenced correctly.
+
+## Resource Relationships
+
+Understanding how resources relate helps you navigate the account:
+
+### Forms & FormFields
+- 1 Form → Many FormFields
+- FormFields reference formId
+- FormFields use previousFields to define ordering
+- Every form needs exactly 1 field with `previousFields: [{ type: 'root', info: {} }]`
+
+### Journeys & AutomationSteps & AutomationTriggers
+- 1 Journey → Many AutomationSteps
+- AutomationSteps define workflow logic
+- AutomationTriggers can add/remove endusers from journeys
+- Steps reference other steps via events (onJourneyStart, afterAction, etc.)
+- Triggers can be global (no journeyId) or journey-specific (with journeyId)
+
+### Templates
+- Used in AutomationSteps (sendEmail, sendSMS actions)
+- Used in CalendarEventTemplates (reminders)
+- Referenced by templateId
+
+### Calendar Resources
+- AppointmentLocation (physical or virtual locations)
+- CalendarEventTemplate (appointment types, reference locations)
+- AppointmentBookingPage (public booking, references templates and locations)
+
+### Databases & DatabaseRecords
+- 1 Database → Many DatabaseRecords
+- Database defines schema (fields)
+- DatabaseRecords store data according to schema
+
+## Common Pitfalls
+
+### ❌ Assuming Resource Existence
+Always fetch to confirm a resource exists before referencing it.
+
+### ❌ Ignoring Dependencies
+Creating a journey step that references a template that doesn't exist will fail.
+
+### ❌ Using Wrong Filter Syntax
+Use `_exists` not `$exists`. Use `_in` not `$in`.
+
+### ❌ Forgetting Pagination
+Large accounts may have hundreds of resources - use pagination to see all.
+
+### ❌ Hardcoding IDs
+Always use IDs returned from API calls, never guess or make up IDs.
+
+### ❌ Skipping Validation
+Before creating, check for duplicates. After creating, verify success.
+
+## Example Interactions
+
+### Example 1: List and Explain Forms
+```
+User: "What forms do I have?"
+
+You:
+1. Call forms_get_page
+2. Response: "You have 3 forms:
+   - Patient Intake Form (enduserFacing)
+   - Health Assessment (enduserFacing)
+   - Staff Note Template (note)
+
+   Would you like to see the fields on any of these?"
+```
+
+### Example 2: Update a Template
+```
+User: "Change the welcome email subject to 'Welcome to Our Practice'"
+
+You:
+1. Call templates_get_page with filter: { title: { _regex: 'welcome' } } (or similar)
+2. Find matching template
+3. Call templates_update_one with id and updates: { subject: 'Welcome to Our Practice' }
+4. Response: "Updated the 'Welcome Email' template subject line."
+```
+
+### Example 3: Create Form with Fields
+```
+User: "Create a simple contact form with name and email"
+
+You:
+1. Call forms_create_one with title: "Contact Form", type: "enduserFacing", version: "v2"
+2. Capture formId
+3. Call form_fields_create_one for name field with previousFields: [{ type: 'root', info: {} }]
+4. Capture nameFieldId
+5. Call form_fields_create_one for email field with previousFields: [{ type: 'after', info: { fieldId: nameFieldId } }]
+6. Response: "Created 'Contact Form' with name and email fields."
+```
+
+### Example 4: Map Journey Workflow
+```
+User: "Show me how the onboarding journey works"
+
+You:
+1. Call journeys_get_page with filter: { title: { _regex: 'onboarding' } }
+2. Call automation_steps_get_page with filter: { journeyId: 'journey-id' }
+3. For each step:
+   - If sendEmail: call templates_get_one
+   - If sendForm: call forms_get_one
+4. Response: "Onboarding Journey:
+   Step 1: Send 'Welcome Email' (immediately)
+   Step 2: Wait 24 hours
+   Step 3: Send 'Health Assessment Form'
+   Step 4a: If score > 10, send 'High Risk Email'
+   Step 4b: Otherwise, send 'Standard Follow-Up'"
+```
+
+### Example 5: Add Field to Existing Form
+```
+User: "Add a phone number field to the intake form"
+
+You:
+1. Call forms_get_page with filter: { title: { _regex: 'intake' } }
+2. Confirm: "I found 'Patient Intake Form'. Is this the one?"
+3. User confirms
+4. Call form_fields_get_page with filter: { formId: 'form-id' }
+5. Find last field in sequence
+6. Call form_fields_create_one with type: 'phone', previousFields: [{ type: 'after', info: { fieldId: 'last-field-id' } }]
+7. Response: "Added phone field after the email field."
+```
+
+## Advanced Usage
+
+### Conditional Logic in Forms
+When creating form fields with conditional display, you may need to reference the enduser filtering pattern:
+1. Call `get_api_conventions` with topic `'enduser-filtering'` for full documentation
+2. Use `compoundLogic` previousField type
+3. Set condition using MongoDB-style queries
+
+### Multi-Step Automation Flows
+When building journeys:
+1. Start with `onJourneyStart` step
+2. Chain steps with `afterAction` events
+3. Use `delayInMS` for timing
+4. Branch with conditions (enduserConditions)
+5. Use triggers to add/remove endusers
+
+### Complex Booking Pages
+When setting up appointment booking:
+1. Create locations first
+2. Create reminder templates
+3. Create calendar event templates (reference templates in reminders array)
+4. Create booking page (reference locations and calendar templates)
+
+## Quick Reference
+
+### MongoDB Query Operators (with _ prefix)
+- `_exists: true/false` - Field exists
+- `_gt: value` - Greater than
+- `_gte: value` - Greater than or equal
+- `_lt: value` - Less than
+- `_lte: value` - Less than or equal
+- `_eq: value` - Equals (usually omit, just use `field: value`)
+- `_ne: value` - Not equals
+- `_in: [values]` - In array
+- `_nin: [values]` - Not in array
+
+### Common Field Names
+**Enduser (patient) standard fields:**
+- `fname`, `lname` - Name
+- `email`, `phone` - Contact
+- `dateOfBirth`, `gender`, `state` - Demographics
+- `tags` - Patient tags array
+- `assignedTo` - Assigned provider user ID
+
+**Custom fields:**
+- Use exact name as defined in organization settings
+- Case-sensitive
+- Examples: "Insurance Provider", "Risk Level", "Preferred Language"
+
+### Form Field Types
+- `'string'` - Short text
+- `'stringLong'` - Long text
+- `'email'` - Email with validation
+- `'phone'` - Phone number
+- `'number'` - Numeric input
+- `'date'` - Date picker
+- `'multiple_choice'` - Radio/checkboxes
+- `'Dropdown'` - Dropdown select
+- Many more (see tool schemas)
+
+### AutomationStep Action Types
+- `'sendEmail'` - Send email template
+- `'sendSMS'` - Send SMS template
+- `'sendForm'` - Send form to enduser
+- `'addEnduserTags'` - Add tags to patient
+- `'removeEnduserTags'` - Remove tags from patient
+- `'setEnduserFields'` - Update custom fields
+- `'createTicket'` - Create task for staff
+- `'addToJourney'` - Add to another journey
+- `'removeFromJourney'` - Remove from journey
+- Many more (see tool schemas)
+
+### AutomationTrigger Event Types
+- `'Field Equals'` - When enduser field changes
+- `'Form Submitted'` - When form is submitted
+- `'Form Started'` - When form is started (for abandoned cart)
+- `'Tag Added'` - When tag is added to enduser
+- `'Appointment Booked'` - When appointment is booked
+- Many more (see tool schemas)
