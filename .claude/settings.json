@@ -7,6 +7,9 @@
       "Read(./config/credentials.json)",
       "Read(./node_modules/**)",
       "Read(./build/**)"
+    ],
+    "allow": [
+      "mcp__tellescope__organizations_get_page"
     ]
-  } 
+  }   
 }

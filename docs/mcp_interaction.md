@@ -4,6 +4,33 @@
 
 You interact directly with Tellescope resources via MCP (Model Context Protocol) tools. You can create, read, update, and explore resources in the user's Tellescope account in real-time.
 
+## Session Initialization
+
+**CRITICAL**: At the start of every MCP interaction session, you MUST check which organization/account the user is working with:
+
+1. **Call `organizations_get_page` without parameters** (it will return the user's accessible organizations)
+2. **Take the LAST organization in the returned list** - this is the active organization for the current API key
+3. **Display the organization name to the user** in a friendly format:
+   - "Working with organization: **[Organization Name]**"
+   - If multiple organizations are returned, show: "You have access to X organizations. Active: **[Organization Name]**"
+
+### Why This Matters
+
+- Users may have multiple API keys for different Tellescope accounts
+- The active organization determines which resources you'll be working with
+- Showing this upfront prevents confusion and mistakes
+- It confirms the API key is configured correctly
+
+### Recommended Allowlist Pattern
+
+To avoid requiring user approval for this initial check, users should add this to their VSCode Claude Code extension settings:
+
+```
+mcp__tellescope__organizations_get_page
+```
+
+See "Configuring Tool Allowlists" section below for instructions on how to add this.
+
 ## Important: MCP Filter Syntax
 
 **MCP tools use native MongoDB operators with `$` prefix** (e.g., `$exists`, `$in`, `$gt`).
@@ -536,6 +563,68 @@ When setting up appointment booking:
 4. Create booking page (reference locations and calendar templates)
 
 ## Quick Reference
+
+### Configuring Tool Allowlists
+
+To enable auto-approval of specific MCP tools (like `organizations_get_page` for session initialization), configure Claude Code permissions in your `settings.json` file.
+
+#### Where to Configure
+
+You can configure permissions at three levels:
+- **User level**: `~/.claude/settings.json` (applies to all projects)
+- **Project level**: `<project-root>/.claude/settings.json` (applies to this project only)
+- **Enterprise level**: Managed by your organization
+
+#### Configuration Format
+
+Create or edit your `settings.json` file with a `permissions` object:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__tellescope__organizations_get_page"
+    ]
+  }
+}
+```
+
+**Recommended allowlist for Constellation users:**
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__tellescope__organizations_get_page"
+    ]
+  }
+}
+```
+
+This prevents interrupting the workflow with approval prompts for the session initialization check.
+
+#### Advanced Permission Configuration
+
+You can also use `ask` and `deny` arrays for more granular control:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__tellescope__organizations_get_page",
+      "mcp__tellescope__forms_get_page",
+      "mcp__tellescope__templates_get_page"
+    ],
+    "ask": [
+      "mcp__tellescope__*_update_one",
+      "mcp__tellescope__*_create_one"
+    ],
+    "deny": []
+  }
+}
+```
+
+**Note**: Permissions are evaluated in order: `deny` → `allow` → `ask`. More specific rules override broader ones.
 
 ### MongoDB Query Operators (mdbFilter uses $ prefix)
 - `$exists: true/false` - Field exists
