@@ -20,6 +20,8 @@ import { messageTemplateSchemas, messageTemplateTools } from "./types/templates"
 import { calendarEventTemplateSchemas, calendarEventTemplateTools } from "./types/calendar_event_templates";
 import { appointmentLocationSchemas, appointmentLocationTools } from "./types/appointment_locations";
 import { appointmentBookingPageSchemas, appointmentBookingPageTools } from "./types/appointment_booking_pages";
+import { databaseRecordSchemas, databaseRecordTools } from "./types/database_records";
+import { databaseSchemas, databaseTools } from "./types/databases";
 
 // Load environment variables
 dotenv.config();
@@ -365,6 +367,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     ...calendarEventTemplateTools,
     ...appointmentLocationTools,
     ...appointmentBookingPageTools,
+    ...databaseTools,
+    ...databaseRecordTools,
     {
       name: "calendar_event_templates_get_page",
       description: "Get a page of calendar event templates from Tellescope with optional filtering and pagination. Returns a list of appointment types/templates. Use lastId for cursor-based pagination to get the next page of results.",
@@ -706,6 +710,8 @@ const modelSchemas: Record<string, {
   calendar_event_templates: calendarEventTemplateSchemas,
   appointment_locations: appointmentLocationSchemas,
   appointment_booking_pages: appointmentBookingPageSchemas,
+  databases: databaseSchemas,
+  database_records: databaseRecordSchemas,
   // Add more models here as they're implemented
 };
 
