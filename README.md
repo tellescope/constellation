@@ -1,8 +1,49 @@
 # Constellation
 
-Account configuration scripts for Tellescope using the [@tellescope/sdk](https://www.npmjs.com/package/@tellescope/sdk) package, powered by Claude Code and TypeScript.
+Two powerful ways to configure and interact with your Tellescope account using Claude Code:
 
-## Features
+1. **Direct Interaction via MCP** (recommended for most tasks) - Talk to Claude to explore and modify your Tellescope configuration in real-time
+2. **Script Generation** - Generate TypeScript scripts for repeatable, version-controlled configuration
+
+## Quick Start: Direct Interaction with Claude Code (MCP)
+
+The fastest way to work with your Tellescope account is to use Claude Code's MCP (Model Context Protocol) integration. This lets you have a conversation with Claude to explore and modify your configuration directly.
+
+### Setup
+
+1. **Configure your Tellescope API key** in the MCP settings (see MCP configuration below)
+2. **Optional: Add permissions** to `.claude/settings.json` to avoid approval prompts for read operations (see [docs/mcp_interaction.md](docs/mcp_interaction.md))
+3. **Start chatting with Claude** - just ask questions or request changes!
+
+### Example Conversations
+
+```
+You: "What forms do I have?"
+Claude: Shows you all forms in your account
+
+You: "Add a phone number field to my intake form"
+Claude: Finds your form, adds the field, confirms success
+
+You: "Show me how my onboarding journey works"
+Claude: Maps out the complete workflow with all steps and templates
+```
+
+### What You Can Do
+
+- ✅ **Explore**: "What journeys do I have?", "Show me my forms", "List all email templates"
+- ✅ **Create**: "Create a welcome email template", "Add a new form field"
+- ✅ **Update**: "Change the subject line", "Add a reminder to this appointment type"
+- ✅ **Understand**: "Explain how this workflow works", "What happens when someone submits this form?"
+
+**Learn more**: See [docs/mcp_interaction.md](docs/mcp_interaction.md) for complete documentation.
+
+---
+
+## Alternative: Generate TypeScript Scripts
+
+If you need repeatable, version-controlled configuration or want to share setup code with others, you can ask Claude to generate TypeScript SDK scripts instead.
+
+### Features
 
 - 🚀 TypeScript-first configuration scripts with full type safety
 - 🤖 Claude Code agent integration for script generation
@@ -19,7 +60,56 @@ constellation/
 └── tests/                  # Test files
 ```
 
-## Getting Started
+## MCP Configuration
+
+To use Claude Code with direct Tellescope interaction, you need to configure the MCP server.
+
+### VSCode Claude Code Extension
+
+Add this to your MCP configuration file (usually `~/Library/Application Support/Claude/claude_desktop_config.json` on Mac):
+
+```json
+{
+  "mcpServers": {
+    "tellescope": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tellescope/mcp-server"
+      ],
+      "env": {
+        "TELLESCOPE_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+Replace `your_api_key_here` with your actual Tellescope API key.
+
+### Optional: Configure Permissions
+
+To avoid approval prompts for read operations, create or edit `.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__tellescope__organizations_get_page",
+      "mcp__tellescope__forms_get_page",
+      "mcp__tellescope__journeys_get_page"
+    ]
+  }
+}
+```
+
+See [docs/mcp_interaction.md](docs/mcp_interaction.md) for the complete recommended permissions list.
+
+---
+
+## Script Generation Setup
+
+If you want to generate and run TypeScript SDK scripts, follow this setup:
 
 ### Installation
 
