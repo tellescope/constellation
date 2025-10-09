@@ -48,6 +48,10 @@ Once you have confirmed the model name, file path, and interface name:
    - Enum values if applicable
    - Nested object structures
 4. **Identify related enums or type aliases** used by the interface
+5. **CRITICAL: For complex object/union fields, research ACTUAL usage patterns** in:
+   - The `/Users/sebastiancoates/tellescope` codebase (test files, example usage)
+   - The `/Users/sebastiancoates/constellation` codebase (examples, agent docs)
+   - Related type definitions that define the structure
 
 **Example:**
 
@@ -64,6 +68,13 @@ export interface MessageTemplate {
   // ... etc
 }
 ```
+
+**IMPORTANT: For complex types like AutomationStep.events or AutomationStep.action:**
+- Don't just say "object with type and info"
+- Research ALL possible event/action types in the type definition file
+- Document the EXACT JSON structure for each type
+- Include examples directly in the description
+- See `/Users/sebastiancoates/constellation/src/mcp/types/automation_steps.ts` as the gold standard
 
 ---
 
@@ -114,6 +125,112 @@ export const MESSAGE_TEMPLATE_DESCRIPTIONS = {
 - Note when fields are conditional (e.g., "only used when type is X")
 - Explain relationships between fields (e.g., "references the ID from...")
 - Use natural language, not code syntax
+
+**CRITICAL: For Complex Object/Union Fields (events, actions, conditions, etc.):**
+
+When a field accepts a complex union of object types (e.g., AutomationStep.events, AutomationStep.action), you MUST provide comprehensive documentation with EXACT JSON structures for EVERY possible type.
+
+**Example pattern for complex union fields:**
+```typescript
+export const AUTOMATION_STEP_DESCRIPTIONS = {
+  events: `Array of trigger events for this step. CRITICAL: Every journey MUST have at least one step with event type 'onJourneyStart' - this is the entry point when an enduser is added to the journey.
+
+Event types and their exact structures:
+
+1. onJourneyStart - REQUIRED for journey entry point
+   { type: 'onJourneyStart', info: {} }
+
+2. afterAction - Sequential steps with optional delay
+   { type: 'afterAction', info: {
+     automationStepId: string,  // ID of previous step
+     delayInMS: number,          // Delay in milliseconds (e.g., 86400000 = 1 day)
+     delay: number,              // Display value (e.g., 1)
+     unit: 'Seconds' | 'Minutes' | 'Hours' | 'Days',
+     officeHoursOnly?: boolean,
+     useEnduserTimezone?: boolean,
+     dayOfMonthCondition?: {     // Run on specific day of month
+       dayOfMonth: number,       // 1-31
+       hour?: number,            // 0-23 (default: 9)
+       minute?: number           // 0-59 (default: 0)
+     }
+   }}
+
+3. formResponse - After form submission
+   { type: 'formResponse', info: { automationStepId: string } }
+
+// ... document ALL event types with exact structures
+
+10. formUnsubmitted - DEPRECATED (use 'formResponse' with conditions instead)`,
+
+  action: `The action to perform when this step executes. Object with 'type', 'info', and optional 'continueOnError'.
+
+Common action types and their exact structures:
+
+COMMUNICATION ACTIONS:
+1. sendEmail
+   { type: 'sendEmail', info: {
+     templateId: string,
+     senderId: string,
+     fromEmailOverride?: string,
+     ccRelatedContactTypes?: string[]
+   }}
+
+2. sendSMS
+   { type: 'sendSMS', info: {
+     templateId: string,
+     senderId: string,
+     hiddenFromTimeline?: boolean
+   }}
+
+// ... document ALL action types organized by category
+
+Plus 30+ more action types including: [list remaining types]`,
+};
+```
+
+**Requirements for complex field descriptions:**
+1. ✅ List EVERY possible type (research the union type definition)
+2. ✅ Show EXACT JSON structure for each type (not just "object with type and info")
+3. ✅ Include all required and optional fields with comments
+4. ✅ Document field types and valid values inline
+5. ✅ Group related types by category (e.g., COMMUNICATION, ENDUSER MANAGEMENT)
+6. ✅ Mark deprecated options clearly
+7. ✅ Include critical warnings (e.g., "MUST have onJourneyStart")
+8. ✅ Show nested object structures fully expanded
+9. ✅ Use real-world examples (e.g., 86400000 for 1 day)
+10. ✅ Reference the actual type definitions to ensure accuracy
+
+**How to research complex types:**
+1. Find the union type in `/Users/sebastiancoates/tellescope/packages/public/types-models/src/index.ts`
+2. Identify all type variants (e.g., `AutomationEventForType` with 11 event types)
+3. For each variant, extract the exact structure of the `info` object
+4. Search for practical usage in test files and examples
+5. Document the complete structure with inline comments
+
+**Bad example (vague, not helpful):**
+```typescript
+events: "Array of event objects. Each event has a type and info object with event-specific configuration."
+```
+
+**Good example (specific, complete):**
+```typescript
+events: `Array of trigger events. CRITICAL: Every journey MUST have onJourneyStart.
+
+1. onJourneyStart - Entry point
+   { type: 'onJourneyStart', info: {} }
+
+2. afterAction - After previous step
+   { type: 'afterAction', info: {
+     automationStepId: string,
+     delayInMS: number,
+     delay: number,
+     unit: 'Seconds' | 'Minutes' | 'Hours' | 'Days'
+   }}
+
+[... all other event types with exact structures]`
+```
+
+See `/Users/sebastiancoates/constellation/src/mcp/types/automation_steps.ts` lines 13-195 for the reference implementation.
 
 #### 4.2: Create Type Constants for Enums
 
@@ -373,6 +490,17 @@ Before completing, verify:
 - [ ] TypeScript build passes (`npx tsc --noEmit`)
 - [ ] Clear, concise field descriptions
 - [ ] Proper type mappings (Zod and JSON Schema)
+
+**CRITICAL - For complex object/union fields:**
+- [ ] Researched ALL possible type variants in the type definition file
+- [ ] Documented EXACT JSON structure for EVERY variant (not just "object with properties")
+- [ ] Included all required and optional fields with inline comments
+- [ ] Organized types by category (if applicable)
+- [ ] Marked deprecated types clearly
+- [ ] Included critical warnings and requirements
+- [ ] Used real-world example values
+- [ ] Verified structures against test files and practical usage
+- [ ] See `automation_steps.ts` as reference for thoroughness
 
 ---
 

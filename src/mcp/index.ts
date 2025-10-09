@@ -14,6 +14,7 @@ import express from "express";
 import { createCreateOneSchema, createUpdateOneSchema } from "./types/_utilities";
 import { formFieldSchemas, formFieldTools } from "./types/form_fields";
 import { journeySchemas, journeyTools } from "./types/journeys";
+import { automationStepSchemas, automationStepTools } from "./types/automation_steps";
 
 // Load environment variables
 dotenv.config();
@@ -353,6 +354,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     ...formFieldTools,
     ...journeyTools,
+    ...automationStepTools,
     {
       name: "calendar_event_templates_get_page",
       description: "Get a page of calendar event templates from Tellescope with optional filtering and pagination. Returns a list of appointment types/templates. Use lastId for cursor-based pagination to get the next page of results.",
@@ -688,6 +690,7 @@ const modelSchemas: Record<string, {
 }> = {
   form_fields: formFieldSchemas,
   journeys: journeySchemas,
+  automation_steps: automationStepSchemas,
   // Add more models here as they're implemented
 };
 
