@@ -591,6 +591,9 @@ Create or edit your `settings.json` file with a `permissions` object:
 
 **Recommended allowlist for Constellation users:**
 
+**Note**: Wildcards do NOT work for MCP tools - you must list each tool explicitly.
+
+**Minimal (session initialization only):**
 ```json
 {
   "permissions": {
@@ -601,30 +604,51 @@ Create or edit your `settings.json` file with a `permissions` object:
 }
 ```
 
-This prevents interrupting the workflow with approval prompts for the session initialization check.
-
-#### Advanced Permission Configuration
-
-You can also use `ask` and `deny` arrays for more granular control:
-
+**Recommended (all read operations + documentation tools):**
 ```json
 {
   "permissions": {
     "allow": [
       "mcp__tellescope__organizations_get_page",
+      "mcp__tellescope__organizations_get_one",
+      "mcp__tellescope__users_get_page",
+      "mcp__tellescope__users_get_one",
+      "mcp__tellescope__templates_get_page",
+      "mcp__tellescope__templates_get_one",
       "mcp__tellescope__forms_get_page",
-      "mcp__tellescope__templates_get_page"
-    ],
-    "ask": [
-      "mcp__tellescope__*_update_one",
-      "mcp__tellescope__*_create_one"
-    ],
-    "deny": []
+      "mcp__tellescope__forms_get_one",
+      "mcp__tellescope__form_fields_get_page",
+      "mcp__tellescope__form_fields_get_one",
+      "mcp__tellescope__journeys_get_page",
+      "mcp__tellescope__journeys_get_one",
+      "mcp__tellescope__automation_steps_get_page",
+      "mcp__tellescope__automation_steps_get_one",
+      "mcp__tellescope__automation_triggers_get_page",
+      "mcp__tellescope__automation_triggers_get_one",
+      "mcp__tellescope__calendar_event_templates_get_page",
+      "mcp__tellescope__calendar_event_templates_get_one",
+      "mcp__tellescope__appointment_locations_get_page",
+      "mcp__tellescope__appointment_locations_get_one",
+      "mcp__tellescope__appointment_booking_pages_get_page",
+      "mcp__tellescope__appointment_booking_pages_get_one",
+      "mcp__tellescope__databases_get_page",
+      "mcp__tellescope__databases_get_one",
+      "mcp__tellescope__database_records_get_page",
+      "mcp__tellescope__database_records_get_one",
+      "mcp__tellescope__managed_content_records_get_page",
+      "mcp__tellescope__managed_content_records_get_one",
+      "mcp__tellescope__products_get_page",
+      "mcp__tellescope__products_get_one",
+      "mcp__tellescope__list_concepts",
+      "mcp__tellescope__explain_concept"
+    ]
   }
 }
 ```
 
-**Note**: Permissions are evaluated in order: `deny` → `allow` → `ask`. More specific rules override broader ones.
+This allows all read-only operations and documentation tools without prompts. Write operations (`create_one`, `update_one`) will still require approval using the default behavior.
+
+**Note**: Permissions are evaluated in order: `deny` → `allow` → default behavior. Wildcards do not work for MCP tool names.
 
 ### MongoDB Query Operators (mdbFilter uses $ prefix)
 - `$exists: true/false` - Field exists

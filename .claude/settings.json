@@ -9,7 +9,38 @@
       "Read(./build/**)"
     ],
     "allow": [
-      "mcp__tellescope__organizations_get_page"
+      "mcp__tellescope__organizations_get_page",
+      "mcp__tellescope__organizations_get_one",
+      "mcp__tellescope__users_get_page",
+      "mcp__tellescope__users_get_one",
+      "mcp__tellescope__templates_get_page",
+      "mcp__tellescope__templates_get_one",
+      "mcp__tellescope__forms_get_page",
+      "mcp__tellescope__forms_get_one",
+      "mcp__tellescope__form_fields_get_page",
+      "mcp__tellescope__form_fields_get_one",
+      "mcp__tellescope__journeys_get_page",
+      "mcp__tellescope__journeys_get_one",
+      "mcp__tellescope__automation_steps_get_page",
+      "mcp__tellescope__automation_steps_get_one",
+      "mcp__tellescope__automation_triggers_get_page",
+      "mcp__tellescope__automation_triggers_get_one",
+      "mcp__tellescope__calendar_event_templates_get_page",
+      "mcp__tellescope__calendar_event_templates_get_one",
+      "mcp__tellescope__appointment_locations_get_page",
+      "mcp__tellescope__appointment_locations_get_one",
+      "mcp__tellescope__appointment_booking_pages_get_page",
+      "mcp__tellescope__appointment_booking_pages_get_one",
+      "mcp__tellescope__databases_get_page",
+      "mcp__tellescope__databases_get_one",
+      "mcp__tellescope__database_records_get_page",
+      "mcp__tellescope__database_records_get_one",
+      "mcp__tellescope__managed_content_records_get_page",
+      "mcp__tellescope__managed_content_records_get_one",
+      "mcp__tellescope__products_get_page",
+      "mcp__tellescope__products_get_one",
+      "mcp__tellescope__list_concepts",
+      "mcp__tellescope__explain_concept"
     ]
   }   
 }
