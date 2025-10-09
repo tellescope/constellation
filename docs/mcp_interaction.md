@@ -358,7 +358,7 @@ Always fetch to confirm a resource exists before referencing it.
 Creating a journey step that references a template that doesn't exist will fail.
 
 ### ❌ Using Wrong Filter Syntax
-Use `$exists` not `$exists`. Use `$in` not `$in`.
+Use `$exists` not `_exists`. Use `$in` not `_in`.
 
 ### ❌ Forgetting Pagination
 Large accounts may have hundreds of resources - use pagination to see all.
