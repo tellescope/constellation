@@ -11,6 +11,8 @@ import { Session } from "@tellescope/sdk";
 import * as dotenv from "dotenv";
 import { z } from "zod";
 import express from "express";
+import { createCreateOneSchema, createUpdateOneSchema } from "./types/_utilities";
+import { formFieldSchemas, formFieldTools } from "./types/form_fields";
 
 // Load environment variables
 dotenv.config();
@@ -27,7 +29,7 @@ const session = new Session({
   apiKey: process.env.TELLESCOPE_API_KEY,
 });
 
-// Define shared input schemas
+// Define shared input schemas for read operations
 const getSomeSchema = z.object({
   filter: z.record(z.any()).optional().describe("Filter criteria"),
   limit: z.number().optional().describe("Maximum number of items to return"),
@@ -54,6 +56,20 @@ const server = new Server(
 // Register available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
+    {
+      name: "get_api_conventions",
+      description: "Get documentation about reusable API patterns used across multiple resource types (e.g., enduserCondition filtering in AutomationSteps/AutomationTriggers, MongoDB query operators, custom field naming). Use this for cross-cutting patterns that apply to many resources, not resource-specific documentation.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          topic: {
+            type: "string",
+            enum: ["enduser-filtering", "all"],
+            description: "Specific convention topic: 'enduser-filtering' for AutomationStep/Trigger enduserCondition patterns, or 'all' for complete conventions",
+          },
+        },
+      },
+    },
     {
       name: "templates_get_page",
       description: "Get a page of templates from Tellescope with optional filtering and pagination. Returns a list of message templates. Use lastId for cursor-based pagination to get the next page of results.",
@@ -334,6 +350,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["id"],
       },
     },
+    ...formFieldTools,
     {
       name: "calendar_event_templates_get_page",
       description: "Get a page of calendar event templates from Tellescope with optional filtering and pagination. Returns a list of appointment types/templates. Use lastId for cursor-based pagination to get the next page of results.",
@@ -624,26 +641,110 @@ async function handleGetOne(modelName: string, args: any) {
   };
 }
 
+// Helper function to handle createOne operations
+async function handleCreateOne(modelName: string, args: any) {
+  const model = (session.api as any)[modelName];
+  if (!model || !model.createOne) {
+    throw new Error(`Model ${modelName} not found or does not support createOne`);
+  }
+
+  const result = await model.createOne(args.data);
+
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result, null, 2),
+      },
+    ],
+  };
+}
+
+// Helper function to handle updateOne operations
+async function handleUpdateOne(modelName: string, args: any) {
+  const model = (session.api as any)[modelName];
+  if (!model || !model.updateOne) {
+    throw new Error(`Model ${modelName} not found or does not support updateOne`);
+  }
+
+  const result = await model.updateOne(args.id, args.updates);
+
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result, null, 2),
+      },
+    ],
+  };
+}
+
+// Registry of model-specific schemas for validation
+const modelSchemas: Record<string, {
+  create?: z.ZodType<any>;
+  update?: z.ZodType<any>;
+}> = {
+  form_fields: formFieldSchemas,
+  // Add more models here as they're implemented
+};
+
 // Implement tool handlers
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     const toolName = request.params.name;
 
-    // Parse tool name: {model}_get_{one|page}
-    const match = toolName.match(/^(.+)_get_(one|page)$/);
-    if (!match) {
-      throw new Error(`Invalid tool name format: ${toolName}`);
+    // Handle special documentation tool
+    if (toolName === "get_api_conventions") {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+
+      const conventionsPath = path.join(__dirname, "../../docs/mcp-conventions.md");
+      const content = await fs.readFile(conventionsPath, "utf-8");
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: content,
+          },
+        ],
+      };
     }
 
-    const [, modelName, operation] = match;
+    // Parse tool name: {model}_{operation}_{one|page}
+    // Supported patterns:
+    // - {model}_get_{one|page}
+    // - {model}_create_one
+    // - {model}_update_one
+    const getMatch = toolName.match(/^(.+)_get_(one|page)$/);
+    const createMatch = toolName.match(/^(.+)_create_one$/);
+    const updateMatch = toolName.match(/^(.+)_update_one$/);
 
-    // Determine if it's a getSome or getOne operation
-    if (operation === "one") {
-      const args = getOneSchema.parse(request.params.arguments);
-      return await handleGetOne(modelName, args);
+    if (getMatch) {
+      const [, modelName, operation] = getMatch;
+      if (operation === "one") {
+        const args = getOneSchema.parse(request.params.arguments);
+        return await handleGetOne(modelName, args);
+      } else {
+        const args = getSomeSchema.parse(request.params.arguments);
+        return await handleGetSome(modelName, args);
+      }
+    } else if (createMatch) {
+      const [, modelName] = createMatch;
+
+      // Use model-specific schema if available, otherwise fall back to generic
+      const schema = modelSchemas[modelName]?.create ?? createCreateOneSchema(z.record(z.any()));
+      const args = schema.parse(request.params.arguments);
+      return await handleCreateOne(modelName, args);
+    } else if (updateMatch) {
+      const [, modelName] = updateMatch;
+
+      // Use model-specific schema if available, otherwise fall back to generic
+      const schema = modelSchemas[modelName]?.update ?? createUpdateOneSchema(z.record(z.any()));
+      const args = schema.parse(request.params.arguments);
+      return await handleUpdateOne(modelName, args);
     } else {
-      const args = getSomeSchema.parse(request.params.arguments);
-      return await handleGetSome(modelName, args);
+      throw new Error(`Invalid tool name format: ${toolName}`);
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
