@@ -43,6 +43,16 @@ Use this when the user wants to:
 
 **→ Read and follow [docs/mcp_interaction.md](docs/mcp_interaction.md)**
 
+**Specialized MCP Agents Available:**
+- **mcp-architect** - Plans configurations and understands dependencies
+- **mcp-organization-builder** - Configures settings/custom fields (CRITICAL: understands replaceObjectFields)
+- **mcp-form-builder** - Creates forms/fields (emphasizes single root rule, real IDs)
+- **mcp-automation-builder** - Creates journeys/steps (journey start rules, trigger patterns)
+- **mcp-message-template-builder** - Creates templates (mobile-first HTML)
+- **mcp-calendar-builder** - Creates appointment resources (locations→templates→pages)
+
+Use the Task tool to invoke these agents when the user's request matches their expertise.
+
 ### Script Generation Intent
 
 Use this when the user explicitly requests:

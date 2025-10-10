@@ -69,6 +69,81 @@ See "Configuring Tool Allowlists" section below for instructions on how to add t
 
 This is different from the SDK's `filter` parameter which uses `_` prefix (e.g., `_exists`, `_in`, `_gt`). When using MCP tools, always use the `$` syntax.
 
+## Specialized MCP Agents
+
+**YOU SHOULD PROACTIVELY USE THESE AGENTS** - They understand Tellescope concepts and handle direct MCP interactions efficiently.
+
+### Available Agents
+
+**mcp-architect**:
+- Expert in analyzing requirements and designing account configurations
+- Understands resource dependencies and data flows
+- Plans sequential MCP operations
+- Use for: Complex multi-resource setups, understanding dependencies
+
+**mcp-organization-builder**:
+- Expert in configuring Organization settings and custom fields
+- **CRITICAL**: Understands replaceObjectFields behavior to avoid data loss
+- Loads organization correctly (LAST in array)
+- Use for: Custom fields, roles, tags, branding, settings
+- **ALWAYS use for organization updates** - it prevents accidental data deletion
+
+**mcp-form-builder**:
+- Expert in creating Forms and FormFields via MCP
+- Emphasizes Single Root Rule (exactly one root field per form)
+- No placeholder IDs - uses actual IDs from MCP responses
+- Use for: Creating/updating forms, adding form fields
+
+**mcp-automation-builder**:
+- Expert in creating Journeys, AutomationSteps, and AutomationTriggers
+- Understands journey start rules (no delayed first step)
+- Knows global trigger vs waitForTrigger patterns
+- Use for: Building workflows, automations, patient journeys
+
+**mcp-message-template-builder**:
+- Expert in creating MessageTemplates with mobile-optimized HTML
+- Understands template variable syntax
+- Creates multi-channel templates (Email + SMS)
+- Use for: Email templates, SMS templates, communication templates
+
+**mcp-calendar-builder**:
+- Expert in creating CalendarEventTemplates, AppointmentLocations, AppointmentBookingPages
+- Understands setup flow (Locations → Templates → Booking Pages)
+- Configures reminders, care plans, booking restrictions
+- Use for: Appointment types, locations, booking pages
+
+### When to Use Agents
+
+**Invoke agents proactively** using the Task tool when the user's request matches:
+
+- "Create a form" → **mcp-form-builder**
+- "Set up a journey/workflow" → **mcp-automation-builder**
+- "Configure custom fields/settings" → **mcp-organization-builder** (CRITICAL for safety)
+- "Create an email template" → **mcp-message-template-builder**
+- "Set up appointment booking" → **mcp-calendar-builder**
+- "Plan a multi-resource setup" → **mcp-architect**
+
+**Example**:
+```
+User: "Add a custom field called 'Risk Level' to track patient risk"
+
+You:
+1. Recognize this is organization configuration
+2. Launch mcp-organization-builder agent with Task tool
+3. Agent handles safe merging to avoid data loss
+4. Confirm success to user
+```
+
+### Agent Principles
+
+All MCP agents follow these patterns:
+- ✅ Discovery first - query existing resources before creating
+- ✅ Real IDs only - never use placeholder IDs
+- ✅ Sequential operations - create in order, capture IDs
+- ✅ Reference schemas - use MCP tool definitions
+- ✅ Safe updates - default merge behavior unless explicitly replacing
+- ✅ Validation - check duplicates, verify success
+
 ## Using the explain_concept Tool
 
 **CRITICAL**: Before using advanced features like `replaceObjectFields`, `enduserConditions`, `mdbFilter`, or date range filtering, you MUST call the `explain_concept` tool to understand correct usage.
@@ -498,89 +573,6 @@ Always use IDs returned from API calls, never guess or make up IDs.
 
 ### ❌ Skipping Validation
 Before creating, check for duplicates. After creating, verify success.
-
-## Specialized MCP Agents
-
-Constellation provides specialized agents that understand Tellescope concepts and can help with direct MCP interactions. These agents are optimized for real-time configuration via MCP tools (as opposed to script generation).
-
-### Available MCP Agents
-
-**mcp-architect**:
-- Expert in analyzing requirements and designing account configurations
-- Understands resource dependencies and data flows
-- Guides discovery-first approach
-- Plans sequential MCP operations
-- Does NOT generate scripts - works directly with MCP tools
-
-**mcp-form-builder**:
-- Expert in creating Forms and FormFields via MCP
-- Emphasizes the Single Root Rule (exactly one root field per form)
-- Understands incremental field creation with real ID passing
-- No placeholder IDs - uses actual IDs from MCP responses
-- Focuses on operational sequences rather than code syntax
-
-**mcp-automation-builder**:
-- Expert in creating Journeys, AutomationSteps, and AutomationTriggers via MCP
-- Understands journey start rules (no delayed first step)
-- Knows global trigger vs waitForTrigger trigger patterns
-- Emphasizes sender ID fetching (never placeholder IDs)
-- Handles conditional logic and error handling patterns
-
-**mcp-message-template-builder**:
-- Expert in creating MessageTemplates via MCP
-- Understands mobile-first HTML email design
-- Knows template variable syntax
-- Creates multi-channel templates (Email + SMS variants)
-- Inline CSS and table-based layouts for email compatibility
-
-**mcp-calendar-builder**:
-- Expert in creating CalendarEventTemplates, AppointmentLocations, and AppointmentBookingPages via MCP
-- Understands setup flow (Locations → Templates → Booking Pages)
-- Knows reminder configuration patterns
-- Handles care plan integration (auto-assign forms/content)
-- Configures booking restrictions and branding
-
-**mcp-organization-builder**:
-- Expert in configuring Organization settings and custom fields via MCP
-- **CRITICAL**: Understands replaceObjectFields behavior to avoid data loss
-- Loads organization correctly (LAST in array from organizations_get_page)
-- Merges settings safely when updating
-- Defines custom fields before other resources reference them
-- Handles roles, skills, tags, branding, calendar settings, communication settings
-
-### When to Use Specialized Agents
-
-Use the Task tool to invoke specialized agents when:
-
-1. **Planning multi-resource setup** → Use mcp-architect
-2. **Creating forms incrementally** → Use mcp-form-builder
-3. **Building automation workflows** → Use mcp-automation-builder
-4. **Designing email templates** → Use mcp-message-template-builder
-5. **Configuring appointment booking** → Use mcp-calendar-builder
-6. **Setting up organization foundation** → Use mcp-organization-builder
-
-**Example**:
-```
-User: "Create an onboarding workflow with a welcome email and intake form"
-
-You:
-1. Determine this requires forms + automations + templates
-2. Launch mcp-architect agent to plan the setup
-3. Follow the plan using mcp-form-builder, mcp-message-template-builder, and mcp-automation-builder
-4. Execute MCP operations sequentially
-```
-
-### Agent Guidelines
-
-All MCP agents follow these principles:
-
-1. **Discovery first** - Query existing resources before creating
-2. **Real IDs only** - Never use placeholder IDs, always use IDs from MCP responses
-3. **Sequential operations** - Create resources in order, capturing IDs at each step
-4. **Operational focus** - Focus on MCP operation sequences, not code syntax
-5. **Reference schemas** - Field/type definitions come from MCP tool schemas
-6. **Safe updates** - Use default merge behavior unless explicitly replacing
-7. **Validation** - Check for duplicates, verify success after operations
 
 ## Example Interactions
 
