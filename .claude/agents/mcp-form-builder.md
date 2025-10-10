@@ -106,12 +106,12 @@ Result: Field B now follows NEW instead of A
 All field type definitions are available in the MCP tool schemas. Consult `form_fields_create_one` tool description for complete type definitions and required options.
 
 **Key type categories:**
-- Text: `'string'`, `'stringLong'`, `'email'`, `'phone'`
+- Text Input: `'string'`, `'stringLong'`, `'Rich Text'`, `'email'`, `'phone'`
 - Numeric: `'number'`, `'rating'`
 - Selection: `'multiple_choice'`, `'Dropdown'`, `'Database Select'`
 - Date/Time: `'date'`, `'dateString'`, `'Time'`, `'Timezone'`
 - File: `'file'`, `'files'`
-- Display: `'Rich Text'`, `'description'`
+- Display-Only: `'description'` (plain text instructions/information)
 - Medical: `'Height'`, `'Medications'`, `'Allergies'`, `'Conditions'`, `'Insurance'`
 
 **Common type requirements:**

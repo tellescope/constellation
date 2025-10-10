@@ -12,6 +12,7 @@ Common field types by category:
 TEXT INPUT:
 - 'string' - Short text input (single line)
 - 'stringLong' - Long text input (multi-line textarea)
+- 'Rich Text' - Rich text INPUT field for collecting formatted responses from users
 - 'email' - Email address with validation
 - 'phone' - Phone number with formatting
 - 'number' - Numeric input
@@ -41,9 +42,10 @@ FILES & MEDIA:
 - 'files' - Multiple file upload (options: { validFileTypes: string[], maxFileSize: number })
 - 'signature' - E-signature capture
 
+DISPLAY-ONLY:
+- 'description' - Display-only plain text for instructions and information
+
 SPECIAL PURPOSE:
-- 'Rich Text' - Display-only rich HTML content
-- 'description' - Display-only plain text
 - 'Hidden Value' - Hidden field with preset value
 - 'Redirect' - Redirect to another form or URL
 - 'Question Group' - Group of sub-questions
