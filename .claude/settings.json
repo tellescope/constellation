@@ -44,7 +44,17 @@
       "mcp__tellescope__products_get_page",
       "mcp__tellescope__products_get_one",
       "mcp__tellescope__list_concepts",
-      "mcp__tellescope__explain_concept"
+      "mcp__tellescope__explain_concept",
+      "mcp__tellescope__templates_create_one",
+      "mcp__tellescope__forms_create_one",
+      "mcp__tellescope__form_fields_create_one",
+      "mcp__tellescope__journeys_create_one",
+      "mcp__tellescope__automation_steps_create_one",
+      "mcp__tellescope__calendar_event_templates_create_one",
+      "mcp__tellescope__appointment_locations_create_one",
+      "mcp__tellescope__appointment_booking_pages_create_one",
+      "mcp__tellescope__databases_create_one",
+      "mcp__tellescope__database_records_create_one"
     ]
   }   
 }
