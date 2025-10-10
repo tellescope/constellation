@@ -253,12 +253,30 @@ npm run build:watch
 
 ## Claude Code Agents
 
-This repository includes specialized Claude Code agents in `.claude/agents/` for generating Tellescope SDK scripts:
+This repository includes specialized Claude Code agents in `.claude/agents/` for working with Tellescope:
 
-- **script-form-builder**: Creates Forms and FormFields with proper ordering and validation
-- **script-automation-builder**: Creates Journeys, AutomationSteps, and AutomationTriggers
-- **script-message-template-builder**: Creates MessageTemplates with modern, mobile-optimized HTML
-- **script-evaluator**: Reviews and validates scripts for correctness and best practices
+### MCP Interaction Agents (Direct Configuration)
+
+Use these agents when working directly with your Tellescope account via MCP:
+
+- **mcp-architect**: Plans account configurations and understands resource dependencies
+- **mcp-form-builder**: Creates Forms and FormFields via MCP with proper ordering
+- **mcp-automation-builder**: Creates Journeys, AutomationSteps, and AutomationTriggers via MCP
+- **mcp-message-template-builder**: Creates MessageTemplates via MCP with mobile-optimized HTML
+- **mcp-calendar-builder**: Creates CalendarEventTemplates, AppointmentLocations, and AppointmentBookingPages via MCP
+- **mcp-organization-builder**: Configures Organization settings, custom fields, roles, and tags via MCP
+
+### Script Generation Agents (TypeScript SDK)
+
+Use these agents when you need to generate repeatable TypeScript SDK scripts:
+
+- **script-architect**: Plans script-based account configurations
+- **script-form-builder**: Generates Form and FormField creation code
+- **script-automation-builder**: Generates Journey and AutomationStep creation code
+- **script-message-template-builder**: Generates MessageTemplate creation code with HTML
+- **script-calendar-builder**: Generates calendar resource creation code
+- **script-organization-builder**: Generates Organization configuration code
+- **script-evaluator**: Reviews and validates generated scripts for correctness
 
 See [CLAUDE.md](CLAUDE.md) for detailed instructions on using these agents.
 
