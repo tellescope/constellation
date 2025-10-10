@@ -255,9 +255,9 @@ npm run build:watch
 
 This repository includes specialized Claude Code agents in `.claude/agents/` for generating Tellescope SDK scripts:
 
-- **form-builder**: Creates Forms and FormFields with proper ordering and validation
-- **automation-builder**: Creates Journeys, AutomationSteps, and AutomationTriggers
-- **message-template-builder**: Creates MessageTemplates with modern, mobile-optimized HTML
+- **script-form-builder**: Creates Forms and FormFields with proper ordering and validation
+- **script-automation-builder**: Creates Journeys, AutomationSteps, and AutomationTriggers
+- **script-message-template-builder**: Creates MessageTemplates with modern, mobile-optimized HTML
 - **script-evaluator**: Reviews and validates scripts for correctness and best practices
 
 See [CLAUDE.md](CLAUDE.md) for detailed instructions on using these agents.
