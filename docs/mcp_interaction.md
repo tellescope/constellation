@@ -197,8 +197,31 @@ Use MCP tools to fetch and explore existing configuration:
 - Filter and search: Use `mdbFilter` parameters with MongoDB-style queries
 
 ### Creating Resources
-Use MCP tools to create new resources directly:
-- Create forms: `forms_create_one`, `form_fields_create_one`
+
+⚠️ **CRITICAL: Sequential Creation for Form Fields**
+
+**You MUST create form fields ONE AT A TIME in sequential messages.**
+
+Each field creation returns a real ID that must be used for the next field. The API will reject placeholder IDs.
+
+❌ **WRONG - Will fail:**
+```
+Create field 1 with previousFields: [{ type: "after", info: { fieldId: "PLACEHOLDER" }}]
+Create field 2 with previousFields: [{ type: "after", info: { fieldId: "NEXT_ID" }}]
+(Both in same batch or using fake IDs)
+```
+
+✅ **CORRECT:**
+```
+1. Create field 1 with previousFields: [{ type: "root", info: {} }]
+   → Get real ID back (e.g., "68e977c6...")
+2. Create field 2 using that real ID:
+   previousFields: [{ type: "after", info: { fieldId: "68e977c6..." }}]
+3. Repeat sequentially for each additional field
+```
+
+**Use MCP tools to create new resources directly:**
+- Create forms: `forms_create_one`, `form_fields_create_one` (⚠️ **fields MUST be created sequentially**)
 - Create templates: `templates_create_one`
 - Create journeys: `journeys_create_one`, `automation_steps_create_one`, `automation_triggers_create_one`
 - Create calendar resources: `calendar_event_templates_create_one`, `appointment_locations_create_one`, `appointment_booking_pages_create_one`

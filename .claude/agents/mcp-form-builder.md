@@ -14,11 +14,18 @@ A Form in Tellescope consists of:
 3. **Field ordering**: Controlled via `previousFields` array on each FormField
 
 ### MCP Workflow for Forms
+
+⚠️ **CRITICAL: You MUST create form fields ONE AT A TIME, waiting for each response before creating the next.**
+
 Unlike script generation, you create resources incrementally:
 1. Create the Form → Get form ID from response
-2. Create first field with `previousFields: [{ type: 'root', info: {} }]` → Get field ID
-3. Create subsequent fields referencing previous field IDs
-4. Update fields if needed to adjust ordering or settings
+2. Create first field with `previousFields: [{ type: 'root', info: {} }]` → **WAIT for response** → Get field ID
+3. Create second field referencing the first field's real ID → **WAIT for response** → Get field ID
+4. Create third field referencing the second field's real ID → **WAIT for response** → Get field ID
+5. Continue this pattern for all remaining fields
+6. Update fields if needed to adjust ordering or settings
+
+**You CANNOT batch create fields with placeholder IDs - the API will reject them.**
 
 ## ⚠️ CRITICAL: The Single Root Rule
 
@@ -85,10 +92,31 @@ Not recommended, but available if needed:
 3. form_fields_update_one for field1: Set `previousFields: [{ type: 'root', info: {} }]`
 4. form_fields_update_one for field2: Set `previousFields: [{ type: 'after', info: { fieldId: field1.id } }]`
 
+**❌ WRONG - Will fail:**
+```
+// DO NOT create multiple fields with placeholder IDs
+Create field 1 with previousFields: [{ type: "after", info: { fieldId: "PLACEHOLDER_1" }}]
+Create field 2 with previousFields: [{ type: "after", info: { fieldId: "PLACEHOLDER_2" }}]
+
+// DO NOT batch create with fake IDs
+Create field 1 with fieldId: "field1"
+Create field 2 with fieldId: "field2"
+```
+
+✅ **CORRECT - Sequential with real IDs:**
+```
+1. Create field 1 → WAIT → Get real ID "68e977c6..."
+2. Create field 2 with previousFields: [{ type: "after", info: { fieldId: "68e977c6..." }}]
+   → WAIT → Get real ID "68e977cb..."
+3. Create field 3 with previousFields: [{ type: "after", info: { fieldId: "68e977cb..." }}]
+   → WAIT → Get real ID "68e977cf..."
+4. Continue pattern for all remaining fields
+```
+
 **❌ NEVER: Placeholder IDs**
-- Cannot create field with `fieldId: 'PLACEHOLDER'` in previousFields
+- Cannot create field with `fieldId: 'PLACEHOLDER'`, `'NEXT_ID'`, `'field1'`, or any fake ID in previousFields
 - Must use actual IDs returned from MCP create operations
-- No exceptions to this rule
+- No exceptions to this rule - the API will reject placeholder IDs
 
 ### Inserting Fields Into Existing Sequences
 
@@ -213,11 +241,11 @@ previousFields: [{
 ### 1. Always Check for Root First
 Query existing fields before creating any field with `type: 'root'` to ensure exactly one root exists.
 
-### 2. Create Fields in Order
-Build fields sequentially, using actual IDs from each create response for the next field's previousFields.
+### 2. Create Fields ONE AT A TIME
+**CRITICAL**: Build fields sequentially in separate messages, waiting for each response before creating the next field.
 
-### 3. Use Real IDs Only
-Never use placeholder, temporary, or guessed IDs. Only use IDs returned from MCP operations.
+### 3. Use Real IDs Only - NO PLACEHOLDERS
+**Never** use placeholder, temporary, or guessed IDs like 'PLACEHOLDER', 'field1', 'NEXT_ID', etc. **Only** use IDs returned from MCP operations. The API will reject fake IDs.
 
 ### 4. Prefer Create-with-Order
 Create fields with correct previousFields immediately rather than creating with empty arrays and updating later.
