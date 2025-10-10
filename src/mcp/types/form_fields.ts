@@ -12,7 +12,7 @@ Common field types by category:
 TEXT INPUT:
 - 'string' - Short text input (single line)
 - 'stringLong' - Long text input (multi-line textarea)
-- 'Rich Text' - Rich text INPUT field for collecting formatted responses from users
+- 'Rich Text' - Rich text INPUT field for collecting formatted responses. Used sparingly - typically never for patient-facing forms, occasionally for internal documentation forms.
 - 'email' - Email address with validation
 - 'phone' - Phone number with formatting
 - 'number' - Numeric input
