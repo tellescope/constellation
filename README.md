@@ -5,6 +5,81 @@ Two powerful ways to configure and interact with your Tellescope account using C
 1. **Direct Interaction via MCP** (recommended for most tasks) - Talk to Claude to explore and modify your Tellescope configuration in real-time
 2. **Script Generation** - Generate TypeScript scripts for repeatable, version-controlled configuration
 
+## Getting Started Completely from Scratch
+
+If you're setting up on a brand new Mac with no development tools installed yet, follow these steps:
+
+### 1. Install Homebrew (Package Manager)
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Follow the on-screen instructions to add Homebrew to your PATH.
+
+### 2. Install Git
+
+```bash
+brew install git
+```
+
+### 3. Install Node.js and npm
+
+```bash
+brew install node
+```
+
+Verify installation:
+```bash
+node --version
+npm --version
+```
+
+### 4. Install VSCode
+
+Download and install from [https://code.visualstudio.com/](https://code.visualstudio.com/)
+
+### 5. Install Claude Code Extension
+
+1. Open VSCode
+2. Go to Extensions (⌘+Shift+X)
+3. Search for "Claude Code"
+4. Click Install
+
+### 6. Clone this Repository
+
+```bash
+git clone <repository-url>
+cd constellation
+```
+
+### 7. Set Up Claude Code Settings
+
+Create the settings file:
+```bash
+mkdir -p .claude
+touch .claude/settings.local.json
+```
+
+**Important**: Reach out to Sebastian to get the secure contents for `settings.local.json`. This file contains your AWS Bedrock API credentials and should never be committed to git (it's already in `.gitignore`).
+
+### 8. Install Project Dependencies
+
+```bash
+npm install
+```
+
+This installs all required dependencies and builds the MCP server.
+
+### 9. You're Ready!
+
+Open Claude Code in VSCode and start interacting with your Tellescope account. Try asking:
+- "What forms do I have?"
+- "Show me my journeys"
+- "Create a welcome email template"
+
+---
+
 ## Quick Start: Direct Interaction with Claude Code (MCP)
 
 The fastest way to work with your Tellescope account is to use Claude Code's MCP (Model Context Protocol) integration. This lets you have a conversation with Claude to explore and modify your configuration directly.
