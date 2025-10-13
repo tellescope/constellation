@@ -7,6 +7,8 @@ Two powerful ways to configure and interact with your Tellescope account using C
 
 ## Getting Started Completely from Scratch
 
+### macOS Setup
+
 If you're setting up on a brand new Mac with no development tools installed yet, follow these steps:
 
 ### 1. Install Homebrew (Package Manager)
@@ -72,6 +74,76 @@ npm install
 This installs all required dependencies and builds the MCP server.
 
 ### 9. You're Ready!
+
+Open Claude Code in VSCode and start interacting with your Tellescope account. Try asking:
+- "What forms do I have?"
+- "Show me my journeys"
+- "Create a welcome email template"
+
+---
+
+### Windows Setup
+
+If you're setting up on a brand new Windows machine with no development tools installed yet, follow these steps:
+
+### 1. Install Git for Windows
+
+Download and install from [https://git-scm.com/download/win](https://git-scm.com/download/win)
+
+During installation:
+- Select "Git from the command line and also from 3rd-party software"
+- Use the default settings for other options
+
+### 2. Install Node.js and npm
+
+Download and install the LTS version from [https://nodejs.org/](https://nodejs.org/)
+
+Verify installation by opening PowerShell or Command Prompt:
+```powershell
+node --version
+npm --version
+```
+
+### 3. Install VSCode
+
+Download and install from [https://code.visualstudio.com/](https://code.visualstudio.com/)
+
+### 4. Install Claude Code Extension
+
+1. Open VSCode
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "Claude Code"
+4. Click Install
+
+### 5. Clone this Repository
+
+Open PowerShell (Start Menu → Search "PowerShell") or Command Prompt:
+```powershell
+git clone <repository-url>
+cd constellation
+```
+
+### 6. Set Up Claude Code Settings
+
+Create the settings file in PowerShell:
+```powershell
+mkdir .claude -ErrorAction SilentlyContinue
+New-Item -Path .claude\settings.local.json -ItemType File
+```
+
+**Tip**: You can use the integrated terminal in VSCode (Ctrl+` or Terminal → New Terminal) and select PowerShell from the dropdown if it's not already the default.
+
+**Important**: Reach out to Sebastian to get the secure contents for `settings.local.json`. This file contains your AWS Bedrock API credentials and should never be committed to git (it's already in `.gitignore`).
+
+### 7. Install Project Dependencies
+
+```powershell
+npm install
+```
+
+This installs all required dependencies and builds the MCP server.
+
+### 8. You're Ready!
 
 Open Claude Code in VSCode and start interacting with your Tellescope account. Try asking:
 - "What forms do I have?"
