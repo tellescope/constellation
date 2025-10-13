@@ -11,9 +11,10 @@ The fastest way to work with your Tellescope account is to use Claude Code's MCP
 
 ### Setup
 
-1. **Configure your Tellescope API key** in the MCP settings (see MCP configuration below)
-2. **Optional: Add permissions** to `.claude/settings.json` to avoid approval prompts for read operations (see [docs/mcp_interaction.md](docs/mcp_interaction.md))
-3. **Start chatting with Claude** - just ask questions or request changes!
+1. **Install dependencies**: Run `npm install` to set up the MCP server (required before first use)
+2. **Configure your Tellescope API key** in the MCP settings (see MCP configuration below)
+3. **Optional: Add permissions** to `.claude/settings.json` to avoid approval prompts for read operations (see [docs/mcp_interaction.md](docs/mcp_interaction.md))
+4. **Start chatting with Claude** - just ask questions or request changes!
 
 ### Example Conversations
 
@@ -62,7 +63,17 @@ constellation/
 
 ## MCP Configuration
 
-To use Claude Code with direct Tellescope interaction, you need to configure the MCP server.
+To use Claude Code with direct Tellescope interaction, you need to install dependencies and configure the MCP server.
+
+### Prerequisites
+
+**Important**: Run this command first to install dependencies and build the MCP server:
+
+```bash
+npm install
+```
+
+This installs required dependencies and automatically builds the MCP server (via the `prepare` script). The MCP server cannot function without this step.
 
 ### VSCode Claude Code Extension
 
