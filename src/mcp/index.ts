@@ -22,6 +22,7 @@ import { appointmentLocationSchemas, appointmentLocationTools } from "./types/ap
 import { appointmentBookingPageSchemas, appointmentBookingPageTools } from "./types/appointment_booking_pages";
 import { databaseRecordSchemas, databaseRecordTools } from "./types/database_records";
 import { databaseSchemas, databaseTools } from "./types/databases";
+import { organizationSchemas, organizationTools } from "./types/organizations";
 
 // Load environment variables
 dotenv.config();
@@ -383,6 +384,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     ...appointmentBookingPageTools,
     ...databaseTools,
     ...databaseRecordTools,
+    ...organizationTools,
     {
       name: "calendar_event_templates_get_page",
       description: "Get a page of calendar event templates from Tellescope with optional filtering and pagination. Returns a list of appointment types/templates. Use lastId for cursor-based pagination to get the next page of results.",
@@ -704,7 +706,7 @@ async function handleUpdateOne(modelName: string, args: any) {
     throw new Error(`Model ${modelName} not found or does not support updateOne`);
   }
 
-  const result = await model.updateOne(args.id, args.updates);
+  const result = await model.updateOne(args.id, args.updates, args.options);
 
   return {
     content: [
@@ -731,6 +733,7 @@ const modelSchemas: Record<string, {
   appointment_booking_pages: appointmentBookingPageSchemas,
   databases: databaseSchemas,
   database_records: databaseRecordSchemas,
+  organizations: organizationSchemas,
   // Add more models here as they're implemented
 };
 
