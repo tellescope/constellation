@@ -976,6 +976,16 @@ export const organizationTools = [
           description: "Organization update data - all fields are optional",
           properties: buildOrganizationUpdateProperties(),
         },
+        options: {
+          type: "object",
+          description: "Update options",
+          properties: {
+            replaceObjectFields: {
+              type: "boolean",
+              description: "Controls merge vs. replace for objects/arrays. CRITICAL: Call explain_concept tool with concept='replaceObjectFields' BEFORE use to avoid data loss. Default (false) = merge behavior (safe). True = complete replacement (dangerous - deletes unmentioned data).",
+            },
+          },
+        },
       },
       required: ["id", "updates"],
     },
