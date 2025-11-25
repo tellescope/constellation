@@ -5,6 +5,8 @@
   ],
   "permissions": {
     "deny": [
+      "Read(./**/*.env.*)",
+      "Read(./**/*.env)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./secrets/**)",
@@ -29,6 +31,7 @@
       "mcp__tellescope__automation_steps_get_one",
       "mcp__tellescope__automation_triggers_get_page",
       "mcp__tellescope__automation_triggers_get_one",
+      "mcp__tellescope__automation_triggers_create_one",
       "mcp__tellescope__calendar_event_templates_get_page",
       "mcp__tellescope__calendar_event_templates_get_one",
       "mcp__tellescope__appointment_locations_get_page",

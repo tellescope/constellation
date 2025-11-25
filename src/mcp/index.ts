@@ -16,6 +16,7 @@ import { formFieldSchemas, formFieldTools } from "./types/form_fields";
 import { formSchemas, formTools } from "./types/forms";
 import { journeySchemas, journeyTools } from "./types/journeys";
 import { automationStepSchemas, automationStepTools } from "./types/automation_steps";
+import { automationTriggerSchemas, automationTriggerTools } from "./types/automation_triggers";
 import { messageTemplateSchemas, messageTemplateTools } from "./types/templates";
 import { calendarEventTemplateSchemas, calendarEventTemplateTools } from "./types/calendar_event_templates";
 import { appointmentLocationSchemas, appointmentLocationTools } from "./types/appointment_locations";
@@ -378,6 +379,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     ...formTools,
     ...journeyTools,
     ...automationStepTools,
+    ...automationTriggerTools,
     ...messageTemplateTools,
     ...calendarEventTemplateTools,
     ...appointmentLocationTools,
@@ -727,6 +729,7 @@ const modelSchemas: Record<string, {
   forms: formSchemas,
   journeys: journeySchemas,
   automation_steps: automationStepSchemas,
+  automation_triggers: automationTriggerSchemas,
   templates: messageTemplateSchemas,
   calendar_event_templates: calendarEventTemplateSchemas,
   appointment_locations: appointmentLocationSchemas,
@@ -839,7 +842,28 @@ Call explain_concept with the concept name to get detailed documentation with ex
       throw new Error(`Invalid tool name format: ${toolName}`);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Better error serialization - handle Error objects, plain objects, and strings
+    let errorMessage: string;
+
+    if (error instanceof Error) {
+      // Include stack trace for debugging
+      errorMessage = `${error.message}\n\nStack:\n${error.stack}`;
+
+      // If it's a validation error with additional properties, include them
+      if ('errors' in error) {
+        errorMessage += `\n\nValidation errors:\n${JSON.stringify((error as any).errors, null, 2)}`;
+      }
+    } else if (typeof error === 'object' && error !== null) {
+      // For plain objects (like validation errors from SDK), serialize as JSON
+      try {
+        errorMessage = JSON.stringify(error, null, 2);
+      } catch {
+        errorMessage = String(error);
+      }
+    } else {
+      errorMessage = String(error);
+    }
+
     return {
       content: [
         {
